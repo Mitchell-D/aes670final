@@ -426,6 +426,13 @@ def get_rgbs(subgrid, fig_dir, gamma_scale:int=2, choose=False):
 if __name__=="__main__":
     """ Settings """
     debug = True
+    colors = {
+        "vegetation":[.16,.65,.29],
+        "water":[.10,.55,1],
+        "water_cloud":[1,1,1],
+        "ice_cloud":[.5,1,1],
+        "arid":[.82,.76,.56],
+        "uncertain":[0,0,0]}
 
     subgrid = restore_subgrid(subgrid_pkl)
     #get_raw_images(subgrid, fig_dir)
@@ -434,18 +441,19 @@ if __name__=="__main__":
     #get_sg2_surface_masks(subgrid, fig_dir, masks_pkl)
     #do_threshold_spectral(subgrid, masks_pkl)
 
-    #subgrid.histogram_analysis([])
-    #exit(0)
-
-    #masks_dict = pkl.load(masks_pkl.open("rb"))
     '''
-    def no_ocean(label):
-        """ Set all water-masked pixels to their total average """
-        Y = np.copy(subgrid.data(label))
-        Y[np.where(masks_dict["water"])] = np.average(
-                Y[np.where(masks_dict["water"])] )
-        return Y
-    #km_bands=list(map(no_ocean,(3,4,1,2,7,"ndvi",29,31,32))) # batch5_noocean
+    """ Do spectral analysis on my custom RGB """
+    subgrid.add_recipe("Band 29, Norm",
+                       Recipe((29,),lambda a: enh.linear_gamma_stretch(a)))
+    subgrid.add_recipe("NDVI Norm",
+                       Recipe(("ndvi",),lambda a: enh.linear_gamma_stretch(a)))
+    subgrid.add_recipe("Inv. Band 31, Norm",
+                       Recipe((31,),lambda a: 1-enh.linear_gamma_stretch(a)))
+    subgrid.histogram_analysis(
+            labels=["Band 29, Norm","NDVI Norm","Inv. Band 31, Norm"],
+            nbins=1024,
+            plot_spec={"colors":[[1,0,0],[0,1,0],[0,0,1]]},
+            show=True)
     '''
 
     '''
@@ -473,7 +481,6 @@ if __name__=="__main__":
             get_new=False,
             plot_classes=False,
             )
-    #'''
     '''
 
     '''
@@ -494,21 +501,74 @@ if __name__=="__main__":
 
     km_dict["merged"] = (new_km, km_bands)
     #pkl.dump(km_dict, kmeans_pkl.open("wb"))
-    colors = [[.16,.65,.29],[.10,.55,1],[1,1,1],[.5,1,1],[.82,.76,.56]]
+    # Subjective class ID order of batch9c10 classification
+    km_order = ["vegetation", "water", "water_cloud", "ice_cloud", "arid"]
+    km_colors = { colors[l] for l in km_order }
     do_kmeans(
             subgrid,
             km_bands=km_bands,
-            batch_label="merged",
+            # Be very careful with label keys! Don't overwrites something.
+            #batch_label="merged",
             km_class_count=5,
             km_pkl=kmeans_pkl,
             fig_dir=fig_dir,
             title=f"Merged Batch 9 Classes",
             get_new=False,
             plot_classes=True,
-            colors=colors,
+            colors=km_order,
             )
+    '''
+
     '''
     km_masks = [np.full_like(km, False, dtype=bool) for i in range(8)]
     for j in range(km.shape[0]):
         for i in range(km.shape[1]):
             km_masks[km[j,i]][j,i] = True
+    '''
+
+    #'''
+    """ Do maximum-likelihood classification """
+    samples = 400
+    thresh = .9
+    mlc_bands = (1,2,3,4,5,19,20,26,28,29,31) # Batch 9
+    #mlc_bands = None
+    #mlc_batch = "all-thresh"
+    #mlc_batch = "b9-thresh"
+    use_km = True
+    #mlc_batch = "all-km"
+    mlc_batch = "b9-km"
+    title = f"Maximum-likelihood Classification Results ({mlc_batch})"
+
+    if use_km:
+        """ Get samples from K-means results """
+        km_order = ["vegetation", "water", "water_cloud", "ice_cloud", "arid"]
+        km_colors = [ colors[l] for l in km_order ]
+        if thresh:
+            km_colors.append(colors["uncertain"])
+        km_ints_merged, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
+        # For each K-means class, get a list of pixel samples
+        km_samples = [MOD021KM.mask_to_idx(M, samples)
+                      for M in MOD021KM.ints_to_masks(km_ints_merged)]
+        km_labels = [f"KM{i+1}" for i in range(len(km_samples))]
+        sample_dict = {km_labels[i]:km_samples[i]
+                       for i in range(len(km_labels))}
+
+    else:
+        """ Get samples from my threshold masks """
+        thresh_labels, thresh_samples = zip(*[
+                (c,MOD021KM.mask_to_idx(M, samples))
+                for c,M in pkl.load(masks_pkl.open("rb")).items()])
+        sample_dict = {thresh_labels[i]:thresh_samples[i]
+                       for i in range(len(thresh_labels))}
+    """ Run MLC and plot classes. """
+    mlc_ints, mlc_labels = subgrid.get_mlc(sample_dict,mlc_bands,thresh)
+    gp.plot_classes(
+            class_array=mlc_ints,
+            class_labels=mlc_labels,
+            colors= km_colors if use_km else [colors[l] for l in mlc_labels],
+            plot_spec={ "title":title },
+            fig_path=fig_dir.joinpath(
+                #f"class/kmeans_all_{km_class_count}c.png"),
+                f"class/mlc_{mlc_batch}_{len(mlc_labels)}c.png"),
+            show=False,
+            )
