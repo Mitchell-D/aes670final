@@ -14,6 +14,38 @@ from aes670hw2 import TextFormat as TFmt
 from aes670hw2 import MOD021KM
 from aes670hw2 import Recipe
 
+'''
+""" Subgrid 1 """
+buf_dir = Path("./buffer")
+fig_dir = Path("./figures")
+data_dir = Path("./data")
+target_latlon = (19.588, -155.51)
+target_time = dt(year=2017, month=6, day=13, hour=20, minute=54)
+satellite = "terra"
+region_width, region_height = 640, 512
+hdf_path = data_dir.joinpath(f"subgrid.hdf")
+subgrid_pkl = data_dir.joinpath(f"subgrid.pkl")
+kmeans_pkl = data_dir.joinpath(f"subgrid_kmeans.pkl")
+masks_pkl = data_dir.joinpath(f"subgrid_masks.pkl")
+'''
+
+""" Subgrid 2 """
+buf_dir = Path("./buffer")
+fig_dir = Path("./figures2")
+data_dir = Path("./data")
+#target_latlon = (1.112, 35.428)
+target_latlon = (32.416, 32.987)
+#target_time = dt(year=2023, month=3, day=24, hour=7, minute=48)
+target_time = dt(year=2019, month=5, day=10, hour=8, minute=29)
+#satellite = "terra"
+satellite = "terra"
+region_width, region_height = 640, 512
+hdf_path = data_dir.joinpath(f"subgrid2.hdf")
+subgrid_pkl = data_dir.joinpath(f"subgrid2.pkl")
+kmeans_pkl = data_dir.joinpath(f"subgrid2_kmeans.pkl")
+masks_pkl = data_dir.joinpath(f"subgrid2_masks.pkl")
+
+
 token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJBUFMgT0F1dGgyIEF1dGhlbnRpY2F0b3IiLCJpYXQiOjE2Nzg0MDEyNzgsIm5iZiI6MTY3ODQwMTI3OCwiZXhwIjoxNjkzOTUzMjc4LCJ1aWQiOiJtZG9kc29uIiwiZW1haWxfYWRkcmVzcyI6Im10ZDAwMTJAdWFoLmVkdSIsInRva2VuQ3JlYXRvciI6Im1kb2Rzb24ifQ.gwlWtdrGZ1CNqeGuNvj841SjnC1TkUkjxb6r-w4SOmk"
 l1b_bands = (
     3,  # 459-479nm blue
@@ -66,22 +98,167 @@ def restore_subgrid(pkl_path):
         subgrid = MOD021KM.from_pkl(pkl_path)
     return subgrid
 
+def do_kmeans(subgrid, km_bands:list, km_pkl:Path, fig_dir:Path,
+              km_class_count:int, batch_label:str, get_new:bool=False,
+              plot_classes:bool=False, colors:list=None, title:str=""):
+    if km_pkl.exists():
+        km_arr = pkl.load(km_pkl.open("rb"))
+    else:
+        km_arr = {}
+    if get_new:
+        new_batch = subgrid.get_kmeans(
+                labels=km_bands, class_count=km_class_count,
+                return_as_ints=True, debug=True)
+        km_arr[batch_label] = (new_batch, km_bands)
+        pkl.dump(km_arr, km_pkl.open("wb"))
+
+    if plot_classes:
+        gp.plot_classes(
+                class_array=km_arr[batch_label][0],
+                class_labels=[f"KM{i+1}" for i in range(km_class_count)],
+                colors=colors,
+                plot_spec={
+                    "title":title
+                    },
+                fig_path=fig_dir.joinpath(
+                    #f"class/kmeans_all_{km_class_count}c.png"),
+                    f"class/kmeans_{batch_label}_{km_class_count}c.png"),
+                show=False,
+                )
+
 def get_raw_images(subgrid, fig_dir):
     """ Get a grayscale and HSV scalar raster for each band """
     print(TFmt.YELLOW("Generating grayscale rasters for all bands"))
     for b in l1b_bands:
-        gp.generate_raw_image(enh.norm_to_uint(subgrid.data(b), 256, np.uint8),
-                              fig_dir.joinpath(Path(f"scalar/raw_{b:02}.png")))
+        gp.generate_raw_image(enh.norm_to_uint(subgrid.data(b),256,np.uint8),
+                              fig_dir.joinpath(Path(f"scalar/gs_{b:02}.png")))
         gp.generate_raw_image(
                 enh.norm_to_uint(1-gt.scal_to_rgb(subgrid.data(b)),
                                  256, np.uint8),
-                fig_dir.joinpath(Path(f"hsv/hsv_{b:02}.png")))
+                fig_dir.joinpath(Path(f"scalar/hsv_{b:02}.png")))
+        if subgrid.info(b)["is_reflective"]:
+            gp.generate_raw_image(
+                    enh.norm_to_uint(1-gt.scal_to_rgb(
+                        subgrid.raw_reflectance(b)),256,np.uint8),
+                    fig_dir.joinpath(Path(f"scalar/rawref_{b:02}.png")))
 
-def get_surface_masks(subgrid, fig_dir, masks_pkl):
+def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
     """ """
     def _update_masks_pkl(mask_key, mask):
         # Load already-selected masks back from the pkl
-        stored_masks = pkl.load(masks_pkl.open("rb"))
+        if not masks_pkl.exists():
+            stored_masks = {}
+        else:
+            stored_masks = pkl.load(masks_pkl.open("rb"))
+        stored_masks[mask_key] = mask
+        # Load the new masks back into the pkl
+        pkl.dump(stored_masks, masks_pkl.open("wb"))
+
+    """ Cirrus mask is a simple lower-bound on the cirrus band """
+    mask_key = "ice_cloud"
+    instr = TFmt.RED(f"Update {mask_key} mask? ",bright=True) + \
+            TFmt.WHITE("(Y/n): ")
+    if input(instr).lower() == "y":
+        print(TFmt.RED(f"Select lower bound for", bright=True),
+              TFmt.WHITE(mask_key, bold=True))
+        mask, rgb = subgrid.get_mask("DCP", lower=True, upper=False,
+                                     choose_rgb_params=True,
+                                     rgb_match=True)
+        # Invert the mask so that ice cloud pixels are True
+        inv_mask = np.logical_not(mask)
+        _update_masks_pkl(mask_key, inv_mask)
+        gp.generate_raw_image(
+                rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
+
+    """ mid-clouds are discerned with the day cloud-phase RGB """
+    mask_key = "water_cloud"
+    instr = TFmt.RED(f"Update {mask_key} mask? ",bright=True) + \
+            TFmt.WHITE("(Y/n): ")
+    if input(instr).lower() == "y":
+        print(TFmt.RED(f"Select upper and lower bounds for", bright=True),
+              TFmt.WHITE(mask_key, bold=True))
+        mask, rgb = subgrid.get_mask("DCP", lower=True, upper=True,
+                                     choose_rgb_params=True, rgb_match=True)
+        land_mask, _ = subgrid.get_mask(31, upper=True, rgb_type="CUSTOM",
+                                     show=True, rgb_match=True)
+        mask = np.logical_or(mask, land_mask)
+        rgb[np.where(np.dstack([mask for i in range(3)]))] = 0
+        # Invert the mask so that water cloud pixels are True
+        inv_mask = np.logical_not(mask)
+        _update_masks_pkl(mask_key, inv_mask)
+        gp.generate_raw_image(
+                rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
+
+    """ arid ground is discerned with my custom RGB """
+    mask_key = "arid"
+    instr = TFmt.RED(f"Update {mask_key} mask? ",bright=True) + \
+            TFmt.WHITE("(Y/n): ")
+    if input(instr).lower() == "y":
+        print(TFmt.RED(f"Select upper and lower bounds for", bright=True),
+              TFmt.WHITE(mask_key, bold=True))
+        mask, rgb = subgrid.get_mask("CUSTOM", lower=True, upper=True,
+                                     choose_rgb_params=True, rgb_match=True)
+        # Invert the mask so that arid is True
+        inv_mask = np.logical_not(mask)
+        _update_masks_pkl(mask_key, inv_mask)
+        gp.generate_raw_image(
+                rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
+
+    """ vegetation is discerned with my custom RGB """
+    mask_key = "vegetation"
+    instr = TFmt.RED(f"Update {mask_key} mask? ",bright=True) + \
+            TFmt.WHITE("(Y/n): ")
+    if input(instr).lower() == "y":
+        print(TFmt.RED(f"Select upper and lower bounds for", bright=True),
+              TFmt.WHITE(mask_key, bold=True))
+        mask, rgb = subgrid.get_mask("CUSTOM", lower=True, upper=True,
+                                     choose_rgb_params=True, rgb_match=True)
+        # Invert the mask so that vegetated are True
+        inv_mask = np.logical_not(mask)
+        _update_masks_pkl(mask_key, inv_mask)
+        gp.generate_raw_image(
+                rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
+
+    """ Water is discerned with the CUSTOM RGB and a lower bound on band 31 """
+    mask_key = "water"
+    instr = TFmt.RED(f"Update {mask_key} mask? ",bright=True) + \
+            TFmt.WHITE("(Y/n): ")
+    if input(instr).lower() == "y":
+        print(TFmt.RED(f"Select upper and lower bounds for", bright=True),
+              TFmt.WHITE(mask_key, bold=True))
+        mask, rgb = subgrid.get_mask("CUSTOM", upper=True, lower=True,
+                                     show=False, rgb_match=True)
+        ndwi_mask, _ = subgrid.get_mask("ndwi", upper=True, lower=True,
+                                     use_hsv=True,show=False, rgb_match=True)
+        # Bounds on LWIR
+        land_mask, _ = subgrid.get_mask(31, lower=True, upper=True,
+                                        rgb_type="CUSTOM", show=False,
+                                        rgb_match=True)
+        # Water is most ambiguous, so negate all other masks
+        masks_dict = pkl.load(masks_pkl.open("rb"))
+        #mask_labels, all_masks = tuple(zip(*masks_dict.items()))
+        #not_water_mask = np.any(np.dstack(all_masks),axis=2)
+        #not_water_mask = np.logical_or(not_water_mask, mask)
+        #water_mask = np.logical_not(not_water_mask)
+        mask = np.logical_or(mask, land_mask)
+        #mask = np.logical_and(mask, cloud_mask)
+        mask = np.logical_or(mask, ndwi_mask)
+        rgb[np.where(np.dstack([mask for i in range(3)]))] = 0
+
+        # Invert the mask so that water are True
+        inv_mask = np.logical_not(mask)
+        _update_masks_pkl(mask_key, inv_mask)
+        gp.generate_raw_image(
+                rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
+
+def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
+    """ """
+    def _update_masks_pkl(mask_key, mask):
+        # Load already-selected masks back from the pkl
+        if not masks_pkl.exists():
+            stored_masks = {}
+        else:
+            stored_masks = pkl.load(masks_pkl.open("rb"))
         stored_masks[mask_key] = mask
         # Load the new masks back into the pkl
         pkl.dump(stored_masks, masks_pkl.open("wb"))
@@ -240,47 +417,98 @@ def do_threshold_spectral(subgrid, masks_pkl):
                 "ylabel":"TOA Brightness Temperature",
                 })
 
+def get_rgbs(subgrid, fig_dir, gamma_scale:int=2, choose=False):
+    for r in subgrid.rgb_recipes.keys():
+        print(TFmt.GREEN("Choose RGB gamma for ")+TFmt.WHITE(r, bold=True))
+        rgb = subgrid.get_rgb(r, choose_gamma=choose, gamma_scale=gamma_scale)
+        gp.generate_raw_image(rgb, fig_dir.joinpath(f"rgbs/rgb_{r}.png"))
+
 if __name__=="__main__":
     """ Settings """
-    img_template = "%Y%m%d_%H%M_{label}_{sat}.png"
-    buf_dir = Path("./buffer")
-    fig_dir = Path("./figures")
-    data_dir = Path("./data")
-    target_latlon = (19.588, -155.51)
-    target_time = dt(year=2017, month=6, day=13, hour=20, minute=54)
-    satellite = "terra"
-    region_width, region_height = 640, 512
     debug = True
-    hdf_path = data_dir.joinpath(f"subgrid.hdf")
-    subgrid_pkl = data_dir.joinpath(f"subgrid.pkl")
-    kmeans_pkl = data_dir.joinpath(f"subgrid_kmeans.pkl")
-    masks_pkl = data_dir.joinpath(f"subgrid_masks.pkl")
+
     subgrid = restore_subgrid(subgrid_pkl)
     #get_raw_images(subgrid, fig_dir)
+    #get_rgbs(subgrid, fig_dir, choose=True, gamma_scale=4)
     #get_surface_masks(subgrid, fig_dir, masks_pkl)
+    #get_sg2_surface_masks(subgrid, fig_dir, masks_pkl)
     #do_threshold_spectral(subgrid, masks_pkl)
 
-    km_class_count = 6
-    get_new = True
-    km_arr = pkl.load(kmeans_pkl.open("rb"))
-    kmeans_bands = (1,2,3,4,5,19,21,26,28,29,31)
-    batch_label = "batch2"
-    if get_new:
-        new_batch = subgrid.get_kmeans(
-                labels=kmeans_bands, class_count=km_class_count,
-                return_as_ints=True, debug=True)
-        km_arr[batch_label] = (new_batch, kmeans_bands)
-        pkl.dump(km_arr, kmeans_pkl.open("wb"))
+    #subgrid.histogram_analysis([])
+    #exit(0)
 
-    gp.plot_classes(
-            class_array=km_arr[batch_label][0],
-            class_labels=[f"KM{i+1}" for i in range(km_class_count)],
-            colors=gt.unique_colors(km_class_count),
-            plot_spec={
-                "title":f"All-band K-means results ({km_class_count} classes)"
-                },
-            fig_path=fig_dir.joinpath(
-                #f"class/kmeans_all_{km_class_count}c.png"),
-                f"class/kmeans_{batch_label}_{km_class_count}c.png"),
-            show=False,
+    #masks_dict = pkl.load(masks_pkl.open("rb"))
+    '''
+    def no_ocean(label):
+        """ Set all water-masked pixels to their total average """
+        Y = np.copy(subgrid.data(label))
+        Y[np.where(masks_dict["water"])] = np.average(
+                Y[np.where(masks_dict["water"])] )
+        return Y
+    #km_bands=list(map(no_ocean,(3,4,1,2,7,"ndvi",29,31,32))) # batch5_noocean
+    '''
+
+    '''
+    """ Do K-means classification """
+    #km_bands=(3,4,1,2,7), # ref only
+    #km_bands=(20,21,29,31,32) # thermal-only
+    #km_bands=(1,2,3,4,5,19,21,26,28,29,31) # Batch 2
+    #km_bands=(1,2,3,4,6,"ndvi",21,26,28,29,31) # Batch 3
+    #km_bands=(1,10,20,21,29,31,32) # Batch 4
+    #km_bands=(3,4,1,2,7,29,31,32) # Batch 5
+    #km_bands=(3,4,1,2,7,26,29,31,32) # Batch 6
+    #km_bands=(3,4,1,2,7,26,29,31,32,33) # Batch 7 w/ cirrus band
+    km_bands=(3,4,1,2,7,19,29,31,32,33) # Batch 8 w/ NIR abs.
+    #km_bands=(1,2,3,4,5,19,20,26,28,29,31) # Batch 9; batch 2 w/20 not 21
+    #km_bands=(3,4,1,2,7,19,29,31,32,33) # Batch 10; batch 8
+    km_class_count = 10
+    do_kmeans(
+            subgrid,
+            km_bands=km_bands,
+            batch_label=f"batch10c{km_class_count}",
+            km_class_count=km_class_count,
+            km_pkl=kmeans_pkl,
+            fig_dir=fig_dir,
+            title=f"Results ({km_class_count} class)",
+            get_new=False,
+            plot_classes=False,
             )
+    #'''
+    '''
+
+    '''
+    """ Merge K-means classes from batch 9 10 class run """
+    km_dict = pkl.load(kmeans_pkl.open("rb"))
+    km = km_dict["batch9c10"][0]
+    new_km = np.zeros_like(km)
+    new_km[np.where(km==0)] = 0 # vegetation
+    new_km[np.where(km==8)] = 0 # vegetation
+    new_km[np.where(km==1)] = 1 # water
+    new_km[np.where(km==2)] = 2 # mid clouds
+    new_km[np.where(km==6)] = 2 # mid clouds
+    new_km[np.where(km==7)] = 2 # mid clouds
+    new_km[np.where(km==9)] = 3 # cirrus
+    new_km[np.where(km==3)] = 3 # cirrus
+    new_km[np.where(km==4)] = 4 # arid
+    new_km[np.where(km==5)] = 4 # arid
+
+    km_dict["merged"] = (new_km, km_bands)
+    #pkl.dump(km_dict, kmeans_pkl.open("wb"))
+    colors = [[.16,.65,.29],[.10,.55,1],[1,1,1],[.5,1,1],[.82,.76,.56]]
+    do_kmeans(
+            subgrid,
+            km_bands=km_bands,
+            batch_label="merged",
+            km_class_count=5,
+            km_pkl=kmeans_pkl,
+            fig_dir=fig_dir,
+            title=f"Merged Batch 9 Classes",
+            get_new=False,
+            plot_classes=True,
+            colors=colors,
+            )
+    '''
+    km_masks = [np.full_like(km, False, dtype=bool) for i in range(8)]
+    for j in range(km.shape[0]):
+        for i in range(km.shape[1]):
+            km_masks[km[j,i]][j,i] = True
