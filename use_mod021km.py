@@ -26,7 +26,7 @@ region_width, region_height = 640, 512
 hdf_path = data_dir.joinpath(f"subgrid.hdf")
 subgrid_pkl = data_dir.joinpath(f"subgrid.pkl")
 kmeans_pkl = data_dir.joinpath(f"subgrid_kmeans.pkl")
-masks_pkl = data_dir.joinpath(f"subgrid_masks.pkl")
+thresh_pkl = data_dir.joinpath(f"subgrid_masks.pkl")
 '''
 
 """ Subgrid 2 """
@@ -43,7 +43,9 @@ region_width, region_height = 640, 512
 hdf_path = data_dir.joinpath(f"subgrid2.hdf")
 subgrid_pkl = data_dir.joinpath(f"subgrid2.pkl")
 kmeans_pkl = data_dir.joinpath(f"subgrid2_kmeans.pkl")
-masks_pkl = data_dir.joinpath(f"subgrid2_masks.pkl")
+thresh_pkl = data_dir.joinpath(f"subgrid2_thresh.pkl")
+samples_pkl = data_dir.joinpath(f"subgrid2_samples.pkl")
+mlc_pkl = data_dir.joinpath(f"subgrid2_mlc.pkl")
 
 
 token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJBUFMgT0F1dGgyIEF1dGhlbnRpY2F0b3IiLCJpYXQiOjE2Nzg0MDEyNzgsIm5iZiI6MTY3ODQwMTI3OCwiZXhwIjoxNjkzOTUzMjc4LCJ1aWQiOiJtZG9kc29uIiwiZW1haWxfYWRkcmVzcyI6Im10ZDAwMTJAdWFoLmVkdSIsInRva2VuQ3JlYXRvciI6Im1kb2Rzb24ifQ.gwlWtdrGZ1CNqeGuNvj841SjnC1TkUkjxb6r-w4SOmk"
@@ -142,17 +144,17 @@ def get_raw_images(subgrid, fig_dir):
                         subgrid.raw_reflectance(b)),256,np.uint8),
                     fig_dir.joinpath(Path(f"scalar/rawref_{b:02}.png")))
 
-def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
+def get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl):
     """ """
-    def _update_masks_pkl(mask_key, mask):
+    def _update_thresh_pkl(mask_key, mask):
         # Load already-selected masks back from the pkl
-        if not masks_pkl.exists():
+        if not thresh_pkl.exists():
             stored_masks = {}
         else:
-            stored_masks = pkl.load(masks_pkl.open("rb"))
+            stored_masks = pkl.load(thresh_pkl.open("rb"))
         stored_masks[mask_key] = mask
         # Load the new masks back into the pkl
-        pkl.dump(stored_masks, masks_pkl.open("wb"))
+        pkl.dump(stored_masks, thresh_pkl.open("wb"))
 
     """ Cirrus mask is a simple lower-bound on the cirrus band """
     mask_key = "ice_cloud"
@@ -166,7 +168,7 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
                                      rgb_match=True)
         # Invert the mask so that ice cloud pixels are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -185,7 +187,7 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
         rgb[np.where(np.dstack([mask for i in range(3)]))] = 0
         # Invert the mask so that water cloud pixels are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -200,7 +202,7 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
                                      choose_rgb_params=True, rgb_match=True)
         # Invert the mask so that arid is True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -215,7 +217,7 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
                                      choose_rgb_params=True, rgb_match=True)
         # Invert the mask so that vegetated are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -235,7 +237,7 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
                                         rgb_type="CUSTOM", show=False,
                                         rgb_match=True)
         # Water is most ambiguous, so negate all other masks
-        masks_dict = pkl.load(masks_pkl.open("rb"))
+        masks_dict = pkl.load(thresh_pkl.open("rb"))
         #mask_labels, all_masks = tuple(zip(*masks_dict.items()))
         #not_water_mask = np.any(np.dstack(all_masks),axis=2)
         #not_water_mask = np.logical_or(not_water_mask, mask)
@@ -247,21 +249,21 @@ def get_sg2_surface_masks(subgrid, fig_dir, masks_pkl):
 
         # Invert the mask so that water are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
-def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
+def get_sg1_surface_masks(subgrid, fig_dir, thresh_pkl):
     """ """
-    def _update_masks_pkl(mask_key, mask):
+    def _update_thresh_pkl(mask_key, mask):
         # Load already-selected masks back from the pkl
-        if not masks_pkl.exists():
+        if not thresh_pkl.exists():
             stored_masks = {}
         else:
-            stored_masks = pkl.load(masks_pkl.open("rb"))
+            stored_masks = pkl.load(thresh_pkl.open("rb"))
         stored_masks[mask_key] = mask
         # Load the new masks back into the pkl
-        pkl.dump(stored_masks, masks_pkl.open("wb"))
+        pkl.dump(stored_masks, thresh_pkl.open("wb"))
 
     """ Cirrus mask is a simple lower-bound on the cirrus band """
     mask_key = "ice_cloud"
@@ -275,7 +277,7 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
                                      rgb_type="DUST", rgb_match=True)
         # Invert the mask so that ice cloud pixels are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -290,7 +292,7 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
                                      choose_rgb_params=True, rgb_match=True)
         # Invert the mask so that water cloud pixels are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -310,13 +312,13 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
                                      choose_rgb_params=True, rgb_match=True)
         # Invert the mask so that igneous are True
         inv_mask = np.logical_not(mask)
-        #_update_masks_pkl(mask_key, inv_mask)
+        #_update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
         old_igneous_mask = np.logical_and(inv_mask, oig_mask)
         new_igneous_mask = np.logical_and(inv_mask, np.logical_not(oig_mask))
-        _update_masks_pkl("old_igneous", old_igneous_mask)
-        _update_masks_pkl("new_igneous", new_igneous_mask)
+        _update_thresh_pkl("old_igneous", old_igneous_mask)
+        _update_thresh_pkl("new_igneous", new_igneous_mask)
 
     """ mid-clouds are discerned with the day cloud-phase RGB """
     mask_key = "vegetation"
@@ -329,7 +331,7 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
                                      choose_rgb_params=True, rgb_match=True)
         # Invert the mask so that vegetated are True
         inv_mask = np.logical_not(mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
@@ -343,7 +345,7 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
         mask, rgb = subgrid.get_mask(31, upper=True, lower=True, show=True,
                                      use_hsv=True, rgb_match=True)
         # Water is most ambiguous, so negate all other masks
-        masks_dict = pkl.load(masks_pkl.open("rb"))
+        masks_dict = pkl.load(thresh_pkl.open("rb"))
         mask_labels, all_masks = tuple(zip(*masks_dict.items()))
         not_water_mask = np.any(np.dstack(all_masks),axis=2)
         not_water_mask = np.logical_or(not_water_mask, mask)
@@ -352,15 +354,15 @@ def get_sg1_surface_masks(subgrid, fig_dir, masks_pkl):
 
         # Invert the mask so that water are True
         inv_mask = np.logical_not(not_water_mask)
-        _update_masks_pkl(mask_key, inv_mask)
+        _update_thresh_pkl(mask_key, inv_mask)
         gp.generate_raw_image(
                 rgb, fig_dir.joinpath(f"rgbs/mask_{mask_key}.png"))
 
-def do_threshold_spectral(subgrid, masks_pkl):
+def do_threshold_spectral(subgrid, thresh_pkl):
     """
     Generate spectral distributions for pixels that belong to each mask.
     """
-    mask_labels, masks = tuple(zip(*pkl.load(masks_pkl.open("rb")).items()))
+    mask_labels, masks = tuple(zip(*pkl.load(thresh_pkl.open("rb")).items()))
     subgrid.spectral_analysis(
             masks=masks,
             mask_labels=mask_labels,
@@ -437,9 +439,9 @@ if __name__=="__main__":
     subgrid = restore_subgrid(subgrid_pkl)
     #get_raw_images(subgrid, fig_dir)
     #get_rgbs(subgrid, fig_dir, choose=True, gamma_scale=4)
-    #get_surface_masks(subgrid, fig_dir, masks_pkl)
-    #get_sg2_surface_masks(subgrid, fig_dir, masks_pkl)
-    #do_threshold_spectral(subgrid, masks_pkl)
+    #get_surface_masks(subgrid, fig_dir, thresh_pkl)
+    #get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl)
+    #do_threshold_spectral(subgrid, thresh_pkl)
 
     '''
     """ Do spectral analysis on my custom RGB """
@@ -530,13 +532,13 @@ if __name__=="__main__":
     """ Do maximum-likelihood classification """
     samples = 400
     thresh = .9
-    mlc_bands = (1,2,3,4,5,19,20,26,28,29,31) # Batch 9
-    #mlc_bands = None
-    #mlc_batch = "all-thresh"
+    #mlc_bands = (1,2,3,4,5,19,20,26,28,29,31) # Batch 9
+    mlc_bands = None
+    mlc_batch = "all-thresh"
     #mlc_batch = "b9-thresh"
-    use_km = True
+    use_km = False
     #mlc_batch = "all-km"
-    mlc_batch = "b9-km"
+    #mlc_batch = "b9-km"
     title = f"Maximum-likelihood Classification Results ({mlc_batch})"
 
     if use_km:
@@ -547,21 +549,22 @@ if __name__=="__main__":
             km_colors.append(colors["uncertain"])
         km_ints_merged, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
         # For each K-means class, get a list of pixel samples
-        km_samples = [MOD021KM.mask_to_idx(M, samples)
+        mlc_samples = [MOD021KM.mask_to_idx(M, samples)
                       for M in MOD021KM.ints_to_masks(km_ints_merged)]
-        km_labels = [f"KM{i+1}" for i in range(len(km_samples))]
-        sample_dict = {km_labels[i]:km_samples[i]
-                       for i in range(len(km_labels))}
+        mlc_labels = [f"KM{i+1}" for i in range(len(mlc_samples))]
+        tmp_mlc_dict = {mlc_labels[i]:mlc_samples[i]
+                       for i in range(len(mlc_labels))}
 
     else:
         """ Get samples from my threshold masks """
-        thresh_labels, thresh_samples = zip(*[
+        # Convert masks to #samples index tuples
+        mlc_labels, mlc_samples = zip(*[
                 (c,MOD021KM.mask_to_idx(M, samples))
-                for c,M in pkl.load(masks_pkl.open("rb")).items()])
-        sample_dict = {thresh_labels[i]:thresh_samples[i]
-                       for i in range(len(thresh_labels))}
+                for c,M in pkl.load(thresh_pkl.open("rb")).items()])
+        tmp_mlc_dict = {mlc_labels[i]:mlc_samples[i]
+                       for i in range(len(mlc_labels))}
     """ Run MLC and plot classes. """
-    mlc_ints, mlc_labels = subgrid.get_mlc(sample_dict,mlc_bands,thresh)
+    mlc_ints, mlc_labels = subgrid.get_mlc(tmp_mlc_dict,mlc_bands,thresh)
     gp.plot_classes(
             class_array=mlc_ints,
             class_labels=mlc_labels,
@@ -572,3 +575,39 @@ if __name__=="__main__":
                 f"class/mlc_{mlc_batch}_{len(mlc_labels)}c.png"),
             show=False,
             )
+    # Convert the sample indeces back into boolean masks for storage
+    sample_labels, sample_masks = tuple(zip(*[
+            (k,MOD021KM.idx_to_mask(X,subgrid.shape))
+            for k,X in tmp_mlc_dict.items()]))
+
+    # Update dictionaries with full MLC masks and masks for just the samples.
+    mlc_dict = pkl.load(mlc_pkl.open("rb"))
+    samples_dict = pkl.load(samples_pkl.open("rb"))
+    # Overwrite the current MLC batch in both dictionaries
+    samples_dict[mlc_batch] = (sample_masks, sample_labels)
+    mlc_dict[mlc_batch] = (mlc_ints, mlc_labels)
+    pkl.dump(samples_dict, samples_pkl.open("wb"))
+    pkl.dump(mlc_dict, mlc_pkl.open("wb"))
+    #'''
+    exit(0)
+
+    """ Calculate the confusion matrices """
+    # Returns the number of elements in common between masks
+    confusion = lambda m1,m2: np.count_nonzero(np.logical_and(m1,m2))
+    km_ints, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
+    km_masks = MOD021KM.ints_to_masks(km_ints)
+    thresh_labels, thresh_masks = zip(*[
+        (c,MOD021KM.mask_to_idx(M, samples))
+        for c,M in pkl.load(thresh_pkl.open("rb")).items()])
+    mlc_run = "b9-km"
+    mlc_ints, mlc_labels = pkl.load(mlc_pkl.open("rb"))[mlc_run]
+    samples_pixels, samples_labels = pkl.load(samples_pkl.open("rb"))[mlc_run]
+    MOD021KM.idx_to_mask(
+            [list(zip(*XY)) for XY in samples_pixels],subgrid.shape)
+
+    for c in range(len(class_covs)):
+        for j in class_covs[c].shape[0]:
+            row_str = ""
+            for i in class_covs[c].shape[1]:
+                row_str+=f" {class_covs[c][j,i]:.3f} "
+            print(row_str)
