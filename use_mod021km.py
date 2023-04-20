@@ -444,20 +444,30 @@ if __name__=="__main__":
     #get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl)
     #do_threshold_spectral(subgrid, thresh_pkl)
 
-    '''
+    #'''
     """ Do spectral analysis on my custom RGB """
-    subgrid.add_recipe("Band 29, Norm",
-                       Recipe((29,),lambda a: enh.linear_gamma_stretch(a)))
-    subgrid.add_recipe("NDVI Norm",
-                       Recipe(("ndvi",),lambda a: enh.linear_gamma_stretch(a)))
-    subgrid.add_recipe("Inv. Band 31, Norm",
-                       Recipe((31,),lambda a: 1-enh.linear_gamma_stretch(a)))
+    subgrid.add_recipe(
+            "Band 31, Norm",
+            Recipe((31,),lambda a: enh.histogram_equalize(a,1024)[0]))
+    subgrid.add_recipe(
+            "NDVI Norm",
+            Recipe(("ndvi",),lambda a: 1024*enh.linear_gamma_stretch(a)))
+    subgrid.add_recipe(
+            "Inv. Band 29, Norm",
+            Recipe((29,),lambda a: 1024-enh.histogram_equalize(a,1024)[0]))
+    subgrid.add_rgb_recipe(
+            "CUSTOMeq",
+            Recipe(
+                args=["Band 31, Norm","NDVI Norm","Inv. Band 29, Norm"],
+                func=lambda a,b,c:enh.linear_gamma_stretch(np.dstack([a,b,c])))
+            )
     subgrid.histogram_analysis(
-            labels=["Band 29, Norm","NDVI Norm","Inv. Band 31, Norm"],
+            labels=["Band 31, Norm","NDVI Norm","Inv. Band 29, Norm"],
             nbins=1024,
             plot_spec={"colors":[[1,0,0],[0,1,0],[0,0,1]]},
             show=True)
-    '''
+    subgrid.quick_render("CUSTOMeq")
+    #'''
 
     '''
     """ Do K-means classification """
@@ -659,17 +669,42 @@ if __name__=="__main__":
     """
     '''
     """ Print pixel count and area info for each run """
-    print(TFmt.WHITE(
-        f"\n -----( AREAS )----- ", bold=True))
+    #gt.quick_render(gt.scal_to_rgb(subgrid.data("sza")))
+    #print(TFmt.WHITE(
+    #    f"\n -----( AREAS )----- ", bold=True))
+    km_runs = []
+    normal_runs = []
     for run in masks_dict.keys():
         run_labels, masks = masks_dict[run]
-        print("\\hline")
-        print("\\textnormal{"+run+"} & "+" & ".join(run_labels))
-        print("\\textnormal{Pixels} & "+" & ".join(
-            [str(int(np.count_nonzero(M))) for M in masks]))
-        print("\\textnormal{Areas} & "+" & ".join(
-            [str(int(subgrid.area(M))) for M in masks]))
-    print(TFmt.GREEN(f"Total area: {subgrid.area()}", bold=True))
+        run_str  = "\\hline\n"
+        run_str += run.replace("_"," ")+" Pixels & " + \
+                " & ".join([str(int(np.count_nonzero(M))) for M in masks])
+        run_str +=  "\\\\\n"+run.replace("_"," ")+" Areas & " + \
+                " & ".join([str(int(subgrid.area(M))) for M in masks])+"\\\\"
+        if "km" in run:
+            km_header = "& "+" & ".join(run_labels) + "\\\\"
+            km_runs.append(run_str)
+        else:
+            normal_header = "& "+" & ".join(
+                    [l.replace("_"," ") for l in run_labels]) + "\\\\"
+            normal_runs.append(run_str)
+    print("\\begin{figure}[h!]\n\\centering")
+    print("\\begin{tabular}{c|" + "".join(
+        ["c" for i in range(len(run_labels)+1)]) + "}")
+    print(normal_header)
+    for s in normal_runs:
+        print(s)
+    print("\\end{tabular}")
+    print("\\begin{tabular}{c|" + "".join(
+        ["c" for i in range(len(run_labels)+1)]) + "}")
+    print(km_header)
+    for s in km_runs:
+        print(s)
+    print("\\end{tabular}")
+    print("\\caption{Pixel class areas and counts}")
+    print("\\label{pixel_areas}\n\\end{figure}")
+
+    #print(TFmt.GREEN(f"Total area: {subgrid.area()}", bold=True))
     '''
 
     '''
@@ -679,7 +714,7 @@ if __name__=="__main__":
     run_labels, run_masks = masks_dict[run]
     """ Get a table for reflectance bands """
     print("\n\\clearpage\n")
-    print("\\begin{figure}[h]\n\\centering")
+    print("\\begin{figure}[h!]\n\\centering")
     print("\\begin{tabular}{C|C|C|" + "".join(
         ["C" for i in range(len(b9_ref_bands))]) + "}\n")
     ref_uncertain = None
@@ -721,7 +756,7 @@ if __name__=="__main__":
 
     """ Get a table for thermal bands """
     print("\n\\clearpage\n")
-    print("\\begin{figure}[h]\n\\centering")
+    print("\\begin{figure}[h!]\n\\centering")
     print("\\begin{tabular}{C|C|C|" + "".join(
         ["C" for i in range(len(b9_temp_bands))]) + "}\n")
     temp_uncertain = None
@@ -764,7 +799,7 @@ if __name__=="__main__":
     """ If there is an uncertain class, print a table for it """
     if temp_uncertain:
         print("\n\\clearpage\n")
-        print("\\begin{figure}[h]\n\\centering")
+        print("\\begin{figure}[h!]\n\\centering")
         print("\\begin{tabular}{C|C|C|" + "".join(
             ["C" for i in range(len(b9_ref_bands))]) + "}\n")
         print(ref_uncertain[1]+"\\hline"+ref_uncertain[2])
@@ -778,6 +813,40 @@ if __name__=="__main__":
         print("\\label{"+run+"_unc_stats}\n\\end{figure}")
     '''
 
+    '''
     """ Get confusion matrices """
-    run = "mlc_km"
-    run_labels, run_masks = masks_dict[run]
+    # Order like (consumer, producer)
+    #compare = ("km", "thresh")
+    #compare = ("samples_thresh", "mlc_thresh")
+    compare = ("samples_km", "mlc_km")
+    L1, M1 = masks_dict[compare[0]]
+    L2, M2 = masks_dict[compare[1]]
+    #print("& " + " & ".join(L2))
+    confusion = np.full((len(L1),len(L2)), 0)
+    for j in range(len(L1)):
+        for i in range(len(L2)):
+            confusion[j,i] = np.count_nonzero(np.logical_and(M1[j],M2[i]))
+    header_str = "& "+" & ".join(
+            ["\\textnormal{"+l.replace("_"," ")+"}" for l in L2])
+    header_str += " & \\textnormal{Cons. Acc.} \\\\\n\\hline"
+    all_rows = ""
+    for i in range(len(L1)):
+        m = np.amax(confusion[i,:])
+        s = np.sum(confusion[i,:])
+        rowstr = "\\textnormal{"+L1[i].replace("_"," ")+"} & "+" & ".join(list(
+            map(str, confusion[i,:])))
+        rowstr += " & "+f"{m/s:.3f}"+ " \\\\\n"
+        all_rows += rowstr
+    all_rows += "\n\\hline\n\\textnormal{Prod. Acc.} & " + " & ".join([
+        f"{np.amax(confusion[:,j])/np.sum(confusion[:,j]):.3f}"
+        for j in range(len(L1))]) + "\\\\"
+    print("\n\\begin{figure}[h!]\n\\centering")
+    print("\\begin{tabular}{C|"+"".join(
+        ["C" for i in range(len(L2))]) +"|C}")
+    print(header_str)
+    print(all_rows)
+    print("\\end{tabular}")
+    print("\\caption{"+compare[0].replace("_"," ") + "/" + \
+            compare[1].replace("_"," ")+" confusion matrix}")
+    print("\\label{confusion_"+"-".join(compare)+"}\n\\end{figure}")
+    '''
