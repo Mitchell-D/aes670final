@@ -1,0 +1,1336 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, total={6in, 8in}, margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage[backend=biber, style=ieee]{biblatex}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amstext}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=blue,
+    pdftitle={aes670hw2},
+    pdfpagemode=FullScreen,
+    }
+\urlstyle{same}
+
+\newcolumntype{L}{>{$}l<{$}}  % Math mode table
+\newcolumntype{R}{>{$}r<{$}}  % Math mode table
+\newcolumntype{C}{>{$}c<{$}}  % Math mode table
+
+\addbibresource{main.bib}
+
+\titleformat{\section}
+  {\normalfont\fontsize{14}{15}\bfseries}{\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\fontsize{12}{15}\bfseries}{\thesubsection}{1em}{}
+
+\title{AES 670 Final Project}
+ \author{Mitchell Dodson}
+\date{March 26, 2023}
+
+\begin{document}
+
+\maketitle
+
+\vspace{5em}
+
+\section{Abstract}
+
+\section{Data and Domain of Analysis}
+
+\section{Tables}
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{ice cloud} \\
+\hline
+0.466 & 0.216 & 0.105 & 111.3 & 118.5 & 125.2 & 138.0 & 88.5 & 135.7 & 0.5 \\
+0.554 & 0.180 & 0.117 & 118.5 & 136.2 & 150.1 & 180.7 & 112.2 & 181.6 & 0.6 \\
+0.646 & 0.173 & 0.130 & 125.2 & 150.1 & 169.8 & 211.0 & 129.4 & 215.2 & 0.6 \\
+0.856 & 0.214 & 0.172 & 138.0 & 180.7 & 211.0 & 295.0 & 176.3 & 309.1 & 1.1 \\
+0.936 & 0.138 & 0.104 & 88.5 & 112.2 & 129.4 & 176.3 & 107.7 & 184.0 & 0.9 \\
+1.242 & 0.216 & 0.183 & 135.7 & 181.6 & 215.2 & 309.1 & 184.0 & 335.2 & 1.2 \\
+1.382 & 0.029 & 0.008 & 0.5 & 0.6 & 0.6 & 1.1 & 0.9 & 1.2 & 0.6 \\
+
+\hline
+\multicolumn{10}{c}{water cloud} \\
+\hline
+0.466 & 0.560 & 0.092 & 84.9 & 81.5 & 81.2 & 82.5 & 68.0 & 47.9 & 0.0 \\
+0.554 & 0.640 & 0.093 & 81.5 & 86.7 & 75.1 & 78.8 & 76.1 & 54.3 & 0.9 \\
+0.646 & 0.568 & 0.090 & 81.2 & 75.1 & 81.3 & 80.1 & 61.9 & 41.8 & -0.6 \\
+0.856 & 0.550 & 0.090 & 82.5 & 78.8 & 80.1 & 80.7 & 65.4 & 45.8 & -0.1 \\
+0.936 & 0.629 & 0.090 & 68.0 & 76.1 & 61.9 & 65.4 & 81.0 & 49.5 & 1.1 \\
+1.242 & 0.367 & 0.063 & 47.9 & 54.3 & 41.8 & 45.8 & 49.5 & 40.2 & 1.7 \\
+1.382 & 0.009 & 0.006 & 0.0 & 0.9 & -0.6 & -0.1 & 1.1 & 1.7 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{vegetation} \\
+\hline
+0.466 & 0.154 & 0.033 & 10.9 & 8.4 & 4.6 & 7.0 & 14.3 & 5.3 & 0.4 \\
+0.554 & 0.312 & 0.058 & 8.4 & 33.5 & 4.4 & 7.2 & 36.5 & 15.0 & 0.1 \\
+0.646 & 0.153 & 0.021 & 4.6 & 4.4 & 4.4 & 4.5 & 6.3 & 0.7 & 0.0 \\
+0.856 & 0.149 & 0.024 & 7.0 & 7.2 & 4.5 & 5.6 & 10.5 & 3.1 & 0.1 \\
+0.936 & 0.329 & 0.068 & 14.3 & 36.5 & 6.3 & 10.5 & 46.8 & 18.0 & 0.4 \\
+1.242 & 0.152 & 0.031 & 5.3 & 15.0 & 0.7 & 3.1 & 18.0 & 9.6 & 0.4 \\
+1.382 & 0.003 & 0.003 & 0.4 & 0.1 & 0.0 & 0.1 & 0.4 & 0.4 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{water} \\
+\hline
+0.466 & 0.036 & 0.005 & 0.2 & 0.1 & 0.3 & 0.3 & 0.1 & 0.1 & 0.0 \\
+0.554 & 0.018 & 0.004 & 0.1 & 0.1 & 0.2 & 0.2 & 0.1 & 0.1 & 0.0 \\
+0.646 & 0.131 & 0.010 & 0.3 & 0.2 & 1.1 & 0.5 & 0.1 & 0.0 & -0.0 \\
+0.856 & 0.062 & 0.007 & 0.3 & 0.2 & 0.5 & 0.5 & 0.1 & 0.1 & 0.0 \\
+0.936 & 0.009 & 0.004 & 0.1 & 0.1 & 0.1 & 0.1 & 0.2 & 0.1 & 0.0 \\
+1.242 & 0.010 & 0.002 & 0.1 & 0.1 & 0.0 & 0.1 & 0.1 & 0.1 & 0.0 \\
+1.382 & 0.002 & 0.002 & 0.0 & 0.0 & -0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+
+\hline
+\multicolumn{10}{c}{arid} \\
+\hline
+0.466 & 0.352 & 0.060 & 35.6 & 39.7 & 15.3 & 25.2 & 44.5 & 14.7 & -0.3 \\
+0.554 & 0.462 & 0.069 & 39.7 & 47.8 & 17.2 & 28.0 & 53.6 & 16.5 & -0.5 \\
+0.646 & 0.223 & 0.030 & 15.3 & 17.2 & 8.8 & 12.4 & 18.9 & 4.7 & -0.3 \\
+0.856 & 0.273 & 0.044 & 25.2 & 28.0 & 12.4 & 19.1 & 31.1 & 9.6 & -0.3 \\
+0.936 & 0.544 & 0.082 & 44.5 & 53.6 & 18.9 & 31.1 & 67.0 & 20.2 & -0.4 \\
+1.242 & 0.243 & 0.037 & 14.7 & 16.5 & 4.7 & 9.6 & 20.2 & 13.5 & 0.4 \\
+1.382 & 0.005 & 0.003 & -0.3 & -0.5 & -0.3 & -0.3 & -0.4 & 0.4 & 0.1 \\
+
+\end{tabular}
+\caption{thresh reflectance statistics}
+\label{thresh_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{ice cloud} \\
+\hline
+3.79 & 297.5 & 8.23 & 6771.7 & 808.8 & 332.1 & 711.5 \\
+7.34 & 249.7 & 2.19 & 808.8 & 479.0 & 317.0 & 475.6 \\
+8.53 & 277.4 & 7.32 & 332.1 & 317.0 & 5356.4 & 5191.0 \\
+11.00 & 277.4 & 7.19 & 711.5 & 475.6 & 5191.0 & 5163.8 \\
+
+\hline
+\multicolumn{7}{c}{water cloud} \\
+\hline
+3.79 & 313.5 & 2.98 & 888.6 & 176.3 & 244.8 & 270.8 \\
+7.34 & 254.1 & 1.28 & 176.3 & 164.8 & 195.4 & 233.4 \\
+8.53 & 276.8 & 2.47 & 244.8 & 195.4 & 612.1 & 627.3 \\
+11.00 & 278.8 & 2.61 & 270.8 & 233.4 & 627.3 & 683.9 \\
+
+\hline
+\multicolumn{7}{c}{vegetation} \\
+\hline
+3.79 & 312.6 & 3.47 & 1201.7 & 212.7 & 867.3 & 1000.8 \\
+7.34 & 256.4 & 1.36 & 212.7 & 185.1 & 213.2 & 273.4 \\
+8.53 & 299.6 & 3.14 & 867.3 & 213.2 & 983.6 & 1063.9 \\
+11.00 & 301.7 & 3.51 & 1000.8 & 273.4 & 1063.9 & 1229.4 \\
+
+\hline
+\multicolumn{7}{c}{water} \\
+\hline
+3.79 & 291.1 & 0.97 & 94.4 & 56.1 & 87.1 & 76.3 \\
+7.34 & 254.5 & 1.03 & 56.1 & 106.4 & 79.5 & 71.0 \\
+8.53 & 285.9 & 1.12 & 87.1 & 79.5 & 126.1 & 117.3 \\
+11.00 & 288.2 & 1.09 & 76.3 & 71.0 & 117.3 & 119.8 \\
+
+\hline
+\multicolumn{7}{c}{arid} \\
+\hline
+3.79 & 321.4 & 3.77 & 1418.6 & 350.3 & -164.7 & 832.2 \\
+7.34 & 259.2 & 2.69 & 350.3 & 726.0 & 330.6 & 475.0 \\
+8.53 & 301.3 & 3.24 & -164.7 & 330.6 & 1047.7 & 357.2 \\
+11.00 & 306.7 & 2.92 & 832.2 & 475.0 & 357.2 & 855.3 \\
+
+\end{tabular}
+\caption{thresh brightness temp. statistics}
+\label{thresh_temp_stats}
+\end{figure}
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{KM1} \\
+\hline
+0.466 & 0.168 & 0.035 & 12.3 & 13.4 & 15.3 & 11.1 & 5.7 & 14.8 & 0.5 \\
+0.554 & 0.170 & 0.041 & 13.4 & 16.8 & 22.0 & 15.7 & 9.4 & 22.0 & 0.7 \\
+0.646 & 0.184 & 0.057 & 15.3 & 22.0 & 32.7 & 20.4 & 14.1 & 31.3 & 1.2 \\
+0.856 & 0.334 & 0.058 & 11.1 & 15.7 & 20.4 & 33.3 & 17.6 & 39.2 & 0.7 \\
+0.936 & 0.170 & 0.036 & 5.7 & 9.4 & 14.1 & 17.6 & 13.3 & 22.8 & 1.0 \\
+1.242 & 0.361 & 0.074 & 14.8 & 22.0 & 31.3 & 39.2 & 22.8 & 54.1 & 1.3 \\
+1.382 & 0.005 & 0.005 & 0.5 & 0.7 & 1.2 & 0.7 & 1.0 & 1.3 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{KM2} \\
+\hline
+0.466 & 0.043 & 0.014 & 1.9 & 2.1 & 1.8 & 1.9 & 2.3 & 1.0 & 0.0 \\
+0.554 & 0.027 & 0.016 & 2.1 & 2.5 & 1.8 & 2.0 & 2.7 & 1.2 & 0.0 \\
+0.646 & 0.136 & 0.016 & 1.8 & 1.8 & 2.6 & 1.9 & 1.9 & 0.8 & -0.1 \\
+0.856 & 0.069 & 0.015 & 1.9 & 2.0 & 1.9 & 2.1 & 2.2 & 0.9 & 0.0 \\
+0.936 & 0.018 & 0.018 & 2.3 & 2.7 & 1.9 & 2.2 & 3.1 & 1.3 & 0.0 \\
+1.242 & 0.014 & 0.008 & 1.0 & 1.2 & 0.8 & 0.9 & 1.3 & 0.6 & 0.0 \\
+1.382 & 0.002 & 0.002 & 0.0 & 0.0 & -0.1 & 0.0 & 0.0 & 0.0 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{KM3} \\
+\hline
+0.466 & 0.210 & 0.161 & 257.8 & 308.1 & 210.7 & 238.6 & 301.9 & 185.3 & 5.3 \\
+0.554 & 0.229 & 0.194 & 308.1 & 375.5 & 249.0 & 284.6 & 370.1 & 226.1 & 6.7 \\
+0.646 & 0.276 & 0.133 & 210.7 & 249.0 & 175.6 & 195.9 & 243.7 & 149.3 & 4.0 \\
+0.856 & 0.225 & 0.149 & 238.6 & 284.6 & 195.9 & 221.2 & 278.7 & 171.0 & 4.8 \\
+0.936 & 0.228 & 0.193 & 301.9 & 370.1 & 243.7 & 278.7 & 372.0 & 223.3 & 6.7 \\
+1.242 & 0.125 & 0.118 & 185.3 & 226.1 & 149.3 & 171.0 & 223.3 & 138.1 & 4.5 \\
+1.382 & 0.004 & 0.006 & 5.3 & 6.7 & 4.0 & 4.8 & 6.7 & 4.5 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{KM4} \\
+\hline
+0.466 & 0.120 & 0.103 & 106.5 & 138.2 & 82.6 & 96.6 & 143.1 & 78.3 & -0.1 \\
+0.554 & 0.130 & 0.139 & 138.2 & 192.6 & 101.1 & 123.8 & 201.5 & 109.2 & 0.7 \\
+0.646 & 0.191 & 0.084 & 82.6 & 101.1 & 70.4 & 77.2 & 104.5 & 56.7 & -0.8 \\
+0.856 & 0.138 & 0.094 & 96.6 & 123.8 & 77.2 & 88.6 & 128.0 & 69.9 & -0.3 \\
+0.936 & 0.127 & 0.147 & 143.1 & 201.5 & 104.5 & 128.0 & 215.0 & 114.3 & 0.8 \\
+1.242 & 0.080 & 0.080 & 78.3 & 109.2 & 56.7 & 69.9 & 114.3 & 63.4 & 1.2 \\
+1.382 & 0.016 & 0.010 & -0.1 & 0.7 & -0.8 & -0.3 & 0.8 & 1.2 & 0.9 \\
+
+\hline
+\multicolumn{10}{c}{KM5} \\
+\hline
+0.466 & 0.366 & 0.055 & 29.8 & 33.7 & 13.9 & 22.0 & 34.6 & 10.5 & -0.3 \\
+0.554 & 0.476 & 0.064 & 33.7 & 40.6 & 15.9 & 24.9 & 42.0 & 11.5 & -0.5 \\
+0.646 & 0.229 & 0.030 & 13.9 & 15.9 & 9.2 & 12.0 & 15.9 & 3.8 & -0.3 \\
+0.856 & 0.283 & 0.042 & 22.0 & 24.9 & 12.0 & 17.8 & 25.1 & 7.5 & -0.3 \\
+0.936 & 0.561 & 0.071 & 34.6 & 42.0 & 15.9 & 25.1 & 49.8 & 12.8 & -0.5 \\
+1.242 & 0.251 & 0.033 & 10.5 & 11.5 & 3.8 & 7.5 & 12.8 & 10.9 & 0.4 \\
+1.382 & 0.005 & 0.003 & -0.3 & -0.5 & -0.3 & -0.3 & -0.5 & 0.4 & 0.1 \\
+
+\end{tabular}
+\caption{km reflectance statistics}
+\label{km_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{KM1} \\
+\hline
+3.79 & 312.6 & 4.23 & 1793.4 & 395.7 & 1422.1 & 1661.1 \\
+7.34 & 256.0 & 1.79 & 395.7 & 319.0 & 470.3 & 586.3 \\
+8.53 & 298.1 & 4.63 & 1422.1 & 470.3 & 2146.3 & 2363.0 \\
+11.00 & 300.0 & 5.20 & 1661.1 & 586.3 & 2363.0 & 2704.1 \\
+
+\hline
+\multicolumn{7}{c}{KM2} \\
+\hline
+3.79 & 292.1 & 2.01 & 404.0 & 60.5 & 94.8 & 83.7 \\
+7.34 & 254.5 & 1.12 & 60.5 & 126.4 & 114.8 & 107.6 \\
+8.53 & 285.8 & 1.51 & 94.8 & 114.8 & 228.1 & 223.0 \\
+11.00 & 287.9 & 1.53 & 83.7 & 107.6 & 223.0 & 233.9 \\
+
+\hline
+\multicolumn{7}{c}{KM3} \\
+\hline
+3.79 & 303.5 & 5.72 & 3276.2 & 110.1 & -959.3 & -1048.7 \\
+7.34 & 254.0 & 1.39 & 110.1 & 193.1 & 311.5 & 332.5 \\
+8.53 & 281.8 & 4.22 & -959.3 & 311.5 & 1777.6 & 1873.9 \\
+11.00 & 284.0 & 4.48 & -1048.7 & 332.5 & 1873.9 & 2009.4 \\
+
+\hline
+\multicolumn{7}{c}{KM4} \\
+\hline
+3.79 & 296.2 & 7.35 & 5405.7 & 478.3 & -1124.8 & -932.1 \\
+7.34 & 252.1 & 2.17 & 478.3 & 469.9 & 459.4 & 596.8 \\
+8.53 & 280.6 & 4.90 & -1124.8 & 459.4 & 2404.9 & 2440.2 \\
+11.00 & 281.5 & 5.06 & -932.1 & 596.8 & 2440.2 & 2563.5 \\
+
+\hline
+\multicolumn{7}{c}{KM5} \\
+\hline
+3.79 & 322.0 & 3.55 & 1257.1 & 272.8 & -185.0 & 741.5 \\
+7.34 & 259.4 & 2.66 & 272.8 & 709.5 & 412.8 & 470.0 \\
+8.53 & 301.3 & 3.45 & -185.0 & 412.8 & 1192.0 & 460.9 \\
+11.00 & 307.0 & 3.03 & 741.5 & 470.0 & 460.9 & 918.3 \\
+
+\end{tabular}
+\caption{km brightness temp. statistics}
+\label{km_temp_stats}
+\end{figure}
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{ice cloud} \\
+\hline
+0.466 & 0.210 & 0.100 & 99.5 & 106.9 & 113.7 & 126.1 & 79.8 & 122.4 & 0.0 \\
+0.554 & 0.172 & 0.112 & 106.9 & 124.6 & 138.7 & 168.7 & 103.6 & 168.5 & 0.3 \\
+0.646 & 0.164 & 0.126 & 113.7 & 138.7 & 158.5 & 199.1 & 120.8 & 202.2 & 0.4 \\
+0.856 & 0.201 & 0.167 & 126.1 & 168.7 & 199.1 & 281.1 & 167.1 & 295.0 & 1.4 \\
+0.936 & 0.131 & 0.101 & 79.8 & 103.6 & 120.8 & 167.1 & 101.4 & 174.4 & 1.1 \\
+1.242 & 0.203 & 0.179 & 122.4 & 168.5 & 202.2 & 295.0 & 174.4 & 321.5 & 1.5 \\
+1.382 & 0.029 & 0.008 & 0.0 & 0.3 & 0.4 & 1.4 & 1.1 & 1.5 & 0.6 \\
+
+\hline
+\multicolumn{10}{c}{water cloud} \\
+\hline
+0.466 & 0.564 & 0.094 & 89.2 & 82.8 & 87.2 & 87.3 & 66.0 & 47.4 & -0.4 \\
+0.554 & 0.645 & 0.092 & 82.8 & 85.4 & 78.3 & 80.7 & 72.0 & 52.2 & 0.5 \\
+0.646 & 0.570 & 0.094 & 87.2 & 78.3 & 89.1 & 86.8 & 61.0 & 42.3 & -1.0 \\
+0.856 & 0.553 & 0.093 & 87.3 & 80.7 & 86.8 & 86.2 & 63.9 & 45.7 & -0.5 \\
+0.936 & 0.635 & 0.085 & 66.0 & 72.0 & 61.0 & 63.9 & 72.6 & 46.0 & 0.9 \\
+1.242 & 0.372 & 0.062 & 47.4 & 52.2 & 42.3 & 45.7 & 46.0 & 38.3 & 1.4 \\
+1.382 & 0.009 & 0.006 & -0.4 & 0.5 & -1.0 & -0.5 & 0.9 & 1.4 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{vegetation} \\
+\hline
+0.466 & 0.152 & 0.033 & 10.8 & 8.4 & 4.8 & 7.0 & 15.1 & 5.4 & 0.3 \\
+0.554 & 0.314 & 0.056 & 8.4 & 31.2 & 4.9 & 7.7 & 33.6 & 13.5 & 0.0 \\
+0.646 & 0.152 & 0.021 & 4.8 & 4.9 & 4.6 & 4.6 & 7.4 & 0.9 & -0.0 \\
+0.856 & 0.147 & 0.024 & 7.0 & 7.7 & 4.6 & 5.7 & 11.5 & 3.3 & 0.1 \\
+0.936 & 0.330 & 0.067 & 15.1 & 33.6 & 7.4 & 11.5 & 44.7 & 16.2 & 0.3 \\
+1.242 & 0.153 & 0.030 & 5.4 & 13.5 & 0.9 & 3.3 & 16.2 & 8.7 & 0.3 \\
+1.382 & 0.003 & 0.003 & 0.3 & 0.0 & -0.0 & 0.1 & 0.3 & 0.3 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{water} \\
+\hline
+0.466 & 0.036 & 0.004 & 0.2 & 0.1 & 0.3 & 0.3 & 0.1 & 0.1 & 0.0 \\
+0.554 & 0.018 & 0.004 & 0.1 & 0.1 & 0.2 & 0.1 & 0.1 & 0.1 & 0.0 \\
+0.646 & 0.131 & 0.010 & 0.3 & 0.2 & 1.1 & 0.5 & 0.1 & 0.0 & -0.0 \\
+0.856 & 0.062 & 0.007 & 0.3 & 0.1 & 0.5 & 0.5 & 0.1 & 0.1 & 0.0 \\
+0.936 & 0.009 & 0.004 & 0.1 & 0.1 & 0.1 & 0.1 & 0.1 & 0.1 & 0.0 \\
+1.242 & 0.010 & 0.002 & 0.1 & 0.1 & 0.0 & 0.1 & 0.1 & 0.0 & 0.0 \\
+1.382 & 0.002 & 0.002 & 0.0 & 0.0 & -0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+
+\hline
+\multicolumn{10}{c}{arid} \\
+\hline
+0.466 & 0.349 & 0.061 & 37.3 & 41.6 & 16.5 & 26.5 & 47.5 & 14.6 & -0.4 \\
+0.554 & 0.459 & 0.071 & 41.6 & 49.9 & 18.5 & 29.6 & 56.9 & 16.4 & -0.6 \\
+0.646 & 0.222 & 0.031 & 16.5 & 18.5 & 9.4 & 13.1 & 20.8 & 4.6 & -0.3 \\
+0.856 & 0.271 & 0.045 & 26.5 & 29.6 & 13.1 & 20.1 & 33.4 & 9.7 & -0.3 \\
+0.936 & 0.539 & 0.085 & 47.5 & 56.9 & 20.8 & 33.4 & 71.6 & 20.1 & -0.6 \\
+1.242 & 0.240 & 0.037 & 14.6 & 16.4 & 4.6 & 9.7 & 20.1 & 13.7 & 0.4 \\
+1.382 & 0.005 & 0.003 & -0.4 & -0.6 & -0.3 & -0.3 & -0.6 & 0.4 & 0.1 \\
+
+\end{tabular}
+\caption{samples thresh reflectance statistics}
+\label{samples_thresh_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{ice cloud} \\
+\hline
+3.79 & 297.0 & 8.04 & 6484.6 & 688.3 & 18.0 & 410.4 \\
+7.34 & 249.6 & 2.09 & 688.3 & 438.8 & 181.6 & 358.7 \\
+8.53 & 277.3 & 6.86 & 18.0 & 181.6 & 4712.9 & 4547.5 \\
+11.00 & 277.4 & 6.72 & 410.4 & 358.7 & 4547.5 & 4533.0 \\
+
+\hline
+\multicolumn{7}{c}{water cloud} \\
+\hline
+3.79 & 313.6 & 3.07 & 942.3 & 216.7 & 341.8 & 380.8 \\
+7.34 & 254.2 & 1.35 & 216.7 & 183.3 & 242.5 & 280.3 \\
+8.53 & 276.9 & 2.62 & 341.8 & 242.5 & 687.8 & 714.4 \\
+11.00 & 278.8 & 2.79 & 380.8 & 280.3 & 714.4 & 781.0 \\
+
+\hline
+\multicolumn{7}{c}{vegetation} \\
+\hline
+3.79 & 312.6 & 3.47 & 1210.5 & 273.0 & 844.8 & 1020.5 \\
+7.34 & 256.4 & 1.44 & 273.0 & 209.3 & 253.8 & 336.3 \\
+8.53 & 299.5 & 3.04 & 844.8 & 253.8 & 925.8 & 1022.5 \\
+11.00 & 301.7 & 3.50 & 1020.5 & 336.3 & 1022.5 & 1226.4 \\
+
+\hline
+\multicolumn{7}{c}{water} \\
+\hline
+3.79 & 291.1 & 0.97 & 94.3 & 60.7 & 87.6 & 77.9 \\
+7.34 & 254.5 & 1.05 & 60.7 & 110.1 & 84.9 & 77.8 \\
+8.53 & 286.0 & 1.12 & 87.6 & 84.9 & 126.2 & 118.8 \\
+11.00 & 288.2 & 1.11 & 77.9 & 77.8 & 118.8 & 123.0 \\
+
+\hline
+\multicolumn{7}{c}{arid} \\
+\hline
+3.79 & 321.1 & 3.80 & 1450.6 & 389.8 & -108.0 & 836.4 \\
+7.34 & 258.9 & 2.81 & 389.8 & 792.3 & 366.1 & 493.1 \\
+8.53 & 301.6 & 3.35 & -108.0 & 366.1 & 1123.1 & 424.3 \\
+11.00 & 306.6 & 2.93 & 836.4 & 493.1 & 424.3 & 859.3 \\
+
+\end{tabular}
+\caption{samples thresh brightness temp. statistics}
+\label{samples_thresh_temp_stats}
+\end{figure}
+
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{ice cloud} \\
+\hline
+0.466 & 0.187 & 0.059 & 34.3 & 37.7 & 40.7 & 50.9 & 29.4 & 54.3 & 0.3 \\
+0.554 & 0.132 & 0.069 & 37.7 & 47.3 & 54.2 & 75.0 & 43.8 & 81.4 & 1.2 \\
+0.646 & 0.115 & 0.080 & 40.7 & 54.2 & 63.9 & 91.2 & 53.5 & 100.0 & 1.8 \\
+0.856 & 0.125 & 0.119 & 50.9 & 75.0 & 91.2 & 141.8 & 82.9 & 156.7 & 3.3 \\
+0.936 & 0.072 & 0.070 & 29.4 & 43.8 & 53.5 & 82.9 & 49.7 & 91.5 & 2.7 \\
+1.242 & 0.126 & 0.132 & 54.3 & 81.4 & 100.0 & 156.7 & 91.5 & 175.2 & 3.5 \\
+1.382 & 0.009 & 0.010 & 0.3 & 1.2 & 1.8 & 3.3 & 2.7 & 3.5 & 1.0 \\
+
+\hline
+\multicolumn{10}{c}{water cloud} \\
+\hline
+0.466 & 0.442 & 0.121 & 147.5 & 149.5 & 134.3 & 141.1 & 131.9 & 91.8 & 1.8 \\
+0.554 & 0.522 & 0.130 & 149.5 & 168.8 & 129.2 & 141.6 & 154.0 & 107.3 & 3.3 \\
+0.646 & 0.461 & 0.112 & 134.3 & 129.2 & 126.4 & 129.6 & 110.9 & 77.1 & 0.8 \\
+0.856 & 0.438 & 0.116 & 141.1 & 141.6 & 129.6 & 135.4 & 123.9 & 86.4 & 1.5 \\
+0.936 & 0.528 & 0.122 & 131.9 & 154.0 & 110.9 & 123.9 & 148.6 & 99.8 & 3.6 \\
+1.242 & 0.297 & 0.085 & 91.8 & 107.3 & 77.1 & 86.4 & 99.8 & 72.4 & 3.0 \\
+1.382 & 0.008 & 0.006 & 1.8 & 3.3 & 0.8 & 1.5 & 3.6 & 3.0 & 0.4 \\
+
+\hline
+\multicolumn{10}{c}{vegetation} \\
+\hline
+0.466 & 0.159 & 0.039 & 15.0 & 11.3 & 6.7 & 9.9 & 18.8 & 6.9 & 0.5 \\
+0.554 & 0.321 & 0.056 & 11.3 & 31.2 & 5.8 & 9.2 & 35.3 & 14.6 & 0.2 \\
+0.646 & 0.156 & 0.024 & 6.7 & 5.8 & 5.6 & 5.9 & 8.6 & 1.6 & 0.1 \\
+0.856 & 0.153 & 0.027 & 9.9 & 9.2 & 5.9 & 7.6 & 13.6 & 4.4 & 0.2 \\
+0.936 & 0.340 & 0.069 & 18.8 & 35.3 & 8.6 & 13.6 & 46.9 & 18.2 & 0.6 \\
+1.242 & 0.158 & 0.032 & 6.9 & 14.6 & 1.6 & 4.4 & 18.2 & 10.0 & 0.5 \\
+1.382 & 0.003 & 0.004 & 0.5 & 0.2 & 0.1 & 0.2 & 0.6 & 0.5 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{water} \\
+\hline
+0.466 & 0.038 & 0.006 & 0.3 & 0.3 & 0.4 & 0.4 & 0.3 & 0.2 & 0.0 \\
+0.554 & 0.021 & 0.006 & 0.3 & 0.3 & 0.3 & 0.3 & 0.4 & 0.2 & 0.1 \\
+0.646 & 0.131 & 0.011 & 0.4 & 0.3 & 1.2 & 0.6 & 0.2 & 0.1 & -0.0 \\
+0.856 & 0.064 & 0.007 & 0.4 & 0.3 & 0.6 & 0.5 & 0.3 & 0.1 & 0.0 \\
+0.936 & 0.012 & 0.006 & 0.3 & 0.4 & 0.2 & 0.3 & 0.4 & 0.2 & 0.1 \\
+1.242 & 0.012 & 0.004 & 0.2 & 0.2 & 0.1 & 0.1 & 0.2 & 0.1 & 0.1 \\
+1.382 & 0.003 & 0.003 & 0.0 & 0.1 & -0.0 & 0.0 & 0.1 & 0.1 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{arid} \\
+\hline
+0.466 & 0.355 & 0.061 & 37.1 & 41.9 & 17.0 & 27.2 & 45.9 & 15.0 & -0.4 \\
+0.554 & 0.464 & 0.071 & 41.9 & 49.8 & 19.2 & 30.6 & 54.8 & 16.8 & -0.5 \\
+0.646 & 0.224 & 0.031 & 17.0 & 19.2 & 9.8 & 13.9 & 20.8 & 5.4 & -0.3 \\
+0.856 & 0.275 & 0.046 & 27.2 & 30.6 & 13.9 & 21.2 & 33.3 & 10.5 & -0.4 \\
+0.936 & 0.546 & 0.082 & 45.9 & 54.8 & 20.8 & 33.3 & 66.9 & 19.8 & -0.5 \\
+1.242 & 0.245 & 0.036 & 15.0 & 16.8 & 5.4 & 10.5 & 19.8 & 13.3 & 0.3 \\
+1.382 & 0.005 & 0.003 & -0.4 & -0.5 & -0.3 & -0.4 & -0.5 & 0.3 & 0.1 \\
+
+\end{tabular}
+\caption{mlc thresh reflectance statistics}
+\label{mlc_thresh_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{ice cloud} \\
+\hline
+3.79 & 297.7 & 6.38 & 4068.9 & 332.0 & 262.8 & 305.2 \\
+7.34 & 253.1 & 2.04 & 332.0 & 416.3 & 501.6 & 645.5 \\
+8.53 & 282.8 & 4.88 & 262.8 & 501.6 & 2384.7 & 2467.6 \\
+11.00 & 284.2 & 5.15 & 305.2 & 645.5 & 2467.6 & 2652.6 \\
+
+\hline
+\multicolumn{7}{c}{water cloud} \\
+\hline
+3.79 & 312.6 & 2.79 & 775.9 & 150.9 & 200.9 & 179.8 \\
+7.34 & 254.2 & 1.29 & 150.9 & 166.1 & 271.4 & 292.2 \\
+8.53 & 278.8 & 3.38 & 200.9 & 271.4 & 1143.4 & 1106.7 \\
+11.00 & 280.6 & 3.35 & 179.8 & 292.2 & 1106.7 & 1119.1 \\
+
+\hline
+\multicolumn{7}{c}{vegetation} \\
+\hline
+3.79 & 312.0 & 4.04 & 1634.5 & 320.6 & 1293.6 & 1486.3 \\
+7.34 & 256.1 & 1.38 & 320.6 & 189.6 & 344.3 & 408.9 \\
+8.53 & 298.7 & 3.88 & 1293.6 & 344.3 & 1502.7 & 1671.5 \\
+11.00 & 300.6 & 4.39 & 1486.3 & 408.9 & 1671.5 & 1926.1 \\
+
+\hline
+\multicolumn{7}{c}{water} \\
+\hline
+3.79 & 291.3 & 1.09 & 117.8 & 47.3 & 74.1 & 57.0 \\
+7.34 & 254.4 & 1.07 & 47.3 & 114.9 & 90.8 & 87.3 \\
+8.53 & 285.8 & 1.20 & 74.1 & 90.8 & 144.7 & 145.0 \\
+11.00 & 287.9 & 1.28 & 57.0 & 87.3 & 145.0 & 163.5 \\
+
+\hline
+\multicolumn{7}{c}{arid} \\
+\hline
+3.79 & 321.5 & 3.72 & 1386.7 & 355.0 & -158.1 & 827.1 \\
+7.34 & 259.2 & 2.72 & 355.0 & 739.6 & 343.6 & 478.9 \\
+8.53 & 301.4 & 3.28 & -158.1 & 343.6 & 1078.8 & 377.2 \\
+11.00 & 306.8 & 2.94 & 827.1 & 478.9 & 377.2 & 863.8 \\
+
+\end{tabular}
+\caption{mlc thresh brightness temp. statistics}
+\label{mlc_thresh_temp_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+\hline0.466 & 0.145 & 0.121 & 147.0 & 200.1 & 83.0 & 115.5 & 204.5 & 109.3 & 4.1 \\
+0.554 & 0.171 & 0.174 & 200.1 & 302.4 & 107.4 & 154.8 & 316.6 & 163.6 & 5.7 \\
+0.646 & 0.191 & 0.078 & 83.0 & 107.4 & 60.1 & 70.5 & 104.4 & 59.7 & 2.1 \\
+0.856 & 0.159 & 0.097 & 115.5 & 154.8 & 70.5 & 94.3 & 155.0 & 85.0 & 3.2 \\
+0.936 & 0.170 & 0.187 & 204.5 & 316.6 & 104.4 & 155.0 & 348.6 & 169.9 & 5.8 \\
+1.242 & 0.088 & 0.095 & 109.3 & 163.6 & 59.7 & 85.0 & 169.9 & 91.0 & 3.6 \\
+1.382 & 0.005 & 0.008 & 4.1 & 5.7 & 2.1 & 3.2 & 5.8 & 3.6 & 0.6 \\
+
+\end{tabular}
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+\hline3.79 & 301.3 & 9.38 & 8802.7 & 881.8 & 3530.7 & 3898.1 \\
+7.34 & 254.8 & 2.59 & 881.8 & 673.2 & 1113.9 & 1227.8 \\
+8.53 & 288.2 & 6.16 & 3530.7 & 1113.9 & 3790.0 & 4043.4 \\
+11.00 & 290.6 & 6.69 & 3898.1 & 1227.8 & 4043.4 & 4480.2 \\
+
+\end{tabular}
+\caption{mlc thresh Uncertain reflectance and brightness temp. statistics}
+\label{mlc_thresh_unc_stats}
+\end{figure}
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{KM1} \\
+\hline
+0.466 & 0.168 & 0.035 & 12.2 & 13.5 & 15.3 & 11.1 & 6.2 & 15.0 & 0.6 \\
+0.554 & 0.169 & 0.041 & 13.5 & 17.0 & 21.8 & 15.5 & 9.9 & 21.9 & 0.9 \\
+0.646 & 0.183 & 0.057 & 15.3 & 21.8 & 32.2 & 20.5 & 14.8 & 31.5 & 1.6 \\
+0.856 & 0.331 & 0.059 & 11.1 & 15.5 & 20.5 & 34.8 & 19.4 & 41.1 & 1.1 \\
+0.936 & 0.168 & 0.038 & 6.2 & 9.9 & 14.8 & 19.4 & 14.5 & 25.1 & 1.2 \\
+1.242 & 0.356 & 0.075 & 15.0 & 21.9 & 31.5 & 41.1 & 25.1 & 56.1 & 1.8 \\
+1.382 & 0.005 & 0.005 & 0.6 & 0.9 & 1.6 & 1.1 & 1.2 & 1.8 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{KM2} \\
+\hline
+0.466 & 0.043 & 0.013 & 1.8 & 2.1 & 1.7 & 1.8 & 2.1 & 1.0 & 0.0 \\
+0.554 & 0.027 & 0.016 & 2.1 & 2.4 & 1.7 & 2.0 & 2.5 & 1.2 & 0.0 \\
+0.646 & 0.136 & 0.016 & 1.7 & 1.7 & 2.4 & 1.8 & 1.7 & 0.8 & -0.0 \\
+0.856 & 0.069 & 0.014 & 1.8 & 2.0 & 1.8 & 1.9 & 2.0 & 0.9 & 0.0 \\
+0.936 & 0.018 & 0.016 & 2.1 & 2.5 & 1.7 & 2.0 & 2.7 & 1.2 & 0.1 \\
+1.242 & 0.014 & 0.008 & 1.0 & 1.2 & 0.8 & 0.9 & 1.2 & 0.6 & 0.1 \\
+1.382 & 0.002 & 0.002 & 0.0 & 0.0 & -0.0 & 0.0 & 0.1 & 0.1 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{KM3} \\
+\hline
+0.466 & 0.223 & 0.169 & 285.6 & 341.1 & 232.2 & 264.5 & 326.0 & 208.9 & 7.0 \\
+0.554 & 0.243 & 0.203 & 341.1 & 414.5 & 275.0 & 315.6 & 400.5 & 254.1 & 8.6 \\
+0.646 & 0.287 & 0.138 & 232.2 & 275.0 & 192.0 & 215.8 & 262.9 & 167.8 & 5.3 \\
+0.856 & 0.237 & 0.156 & 264.5 & 315.6 & 215.8 & 245.4 & 301.4 & 193.1 & 6.4 \\
+0.936 & 0.241 & 0.200 & 326.0 & 400.5 & 262.9 & 301.4 & 400.4 & 245.6 & 8.2 \\
+1.242 & 0.134 & 0.125 & 208.9 & 254.1 & 167.8 & 193.1 & 245.6 & 157.8 & 5.7 \\
+1.382 & 0.005 & 0.006 & 7.0 & 8.6 & 5.3 & 6.4 & 8.2 & 5.7 & 0.4 \\
+
+\hline
+\multicolumn{10}{c}{KM4} \\
+\hline
+0.466 & 0.123 & 0.103 & 107.0 & 139.1 & 80.3 & 96.2 & 137.9 & 78.5 & -0.4 \\
+0.554 & 0.134 & 0.140 & 139.1 & 195.4 & 98.3 & 123.4 & 197.9 & 111.2 & 0.6 \\
+0.646 & 0.191 & 0.082 & 80.3 & 98.3 & 66.7 & 74.4 & 97.7 & 54.4 & -1.2 \\
+0.856 & 0.140 & 0.093 & 96.2 & 123.4 & 74.4 & 87.4 & 122.3 & 69.2 & -0.6 \\
+0.936 & 0.129 & 0.144 & 137.9 & 197.9 & 97.7 & 122.3 & 207.7 & 112.5 & 0.8 \\
+1.242 & 0.082 & 0.080 & 78.5 & 111.2 & 54.4 & 69.2 & 112.5 & 64.7 & 1.1 \\
+1.382 & 0.016 & 0.010 & -0.4 & 0.6 & -1.2 & -0.6 & 0.8 & 1.1 & 1.0 \\
+
+\hline
+\multicolumn{10}{c}{KM5} \\
+\hline
+0.466 & 0.369 & 0.057 & 32.1 & 36.7 & 14.8 & 23.6 & 36.3 & 11.7 & -0.3 \\
+0.554 & 0.480 & 0.067 & 36.7 & 44.4 & 16.9 & 26.9 & 44.4 & 13.0 & -0.5 \\
+0.646 & 0.231 & 0.030 & 14.8 & 16.9 & 9.2 & 12.5 & 16.3 & 4.1 & -0.2 \\
+0.856 & 0.286 & 0.043 & 23.6 & 26.9 & 12.5 & 18.8 & 26.2 & 8.1 & -0.3 \\
+0.936 & 0.565 & 0.071 & 36.3 & 44.4 & 16.3 & 26.2 & 50.4 & 13.4 & -0.6 \\
+1.242 & 0.253 & 0.035 & 11.7 & 13.0 & 4.1 & 8.1 & 13.4 & 12.0 & 0.4 \\
+1.382 & 0.005 & 0.004 & -0.3 & -0.5 & -0.2 & -0.3 & -0.6 & 0.4 & 0.1 \\
+
+\end{tabular}
+\caption{samples km reflectance statistics}
+\label{samples_km_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{KM1} \\
+\hline
+3.79 & 312.7 & 4.10 & 1685.3 & 314.2 & 1303.2 & 1523.8 \\
+7.34 & 256.0 & 1.73 & 314.2 & 300.9 & 410.4 & 525.2 \\
+8.53 & 298.1 & 4.64 & 1303.2 & 410.4 & 2158.9 & 2360.5 \\
+11.00 & 300.0 & 5.18 & 1523.8 & 525.2 & 2360.5 & 2689.2 \\
+
+\hline
+\multicolumn{7}{c}{KM2} \\
+\hline
+3.79 & 292.0 & 2.01 & 406.1 & 58.5 & 89.6 & 76.4 \\
+7.34 & 254.5 & 1.06 & 58.5 & 112.2 & 96.9 & 89.4 \\
+8.53 & 285.7 & 1.41 & 89.6 & 96.9 & 198.8 & 194.2 \\
+11.00 & 287.8 & 1.43 & 76.4 & 89.4 & 194.2 & 205.7 \\
+
+\hline
+\multicolumn{7}{c}{KM3} \\
+\hline
+3.79 & 303.7 & 5.85 & 3428.4 & 103.2 & -941.2 & -1023.6 \\
+7.34 & 253.9 & 1.42 & 103.2 & 202.4 & 354.6 & 382.2 \\
+8.53 & 281.4 & 4.28 & -941.2 & 354.6 & 1836.7 & 1961.1 \\
+11.00 & 283.6 & 4.60 & -1023.6 & 382.2 & 1961.1 & 2123.0 \\
+
+\hline
+\multicolumn{7}{c}{KM4} \\
+\hline
+3.79 & 296.2 & 7.20 & 5201.2 & 533.0 & -853.1 & -646.2 \\
+7.34 & 252.0 & 2.21 & 533.0 & 489.8 & 455.0 & 599.3 \\
+8.53 & 280.6 & 4.49 & -853.1 & 455.0 & 2019.8 & 2082.2 \\
+11.00 & 281.5 & 4.72 & -646.2 & 599.3 & 2082.2 & 2234.2 \\
+
+\hline
+\multicolumn{7}{c}{KM5} \\
+\hline
+3.79 & 322.0 & 3.63 & 1321.8 & 270.2 & -203.2 & 767.7 \\
+7.34 & 259.5 & 2.79 & 270.2 & 782.2 & 489.4 & 516.5 \\
+8.53 & 301.0 & 3.56 & -203.2 & 489.4 & 1270.3 & 480.4 \\
+11.00 & 306.9 & 3.08 & 767.7 & 516.5 & 480.4 & 953.2 \\
+
+\end{tabular}
+\caption{samples km brightness temp. statistics}
+\label{samples_km_temp_stats}
+\end{figure}
+
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+
+\hline
+\multicolumn{10}{c}{KM1} \\
+\hline
+0.466 & 0.167 & 0.033 & 10.7 & 12.0 & 14.4 & 10.9 & 5.6 & 15.0 & 0.5 \\
+0.554 & 0.169 & 0.040 & 12.0 & 15.9 & 21.7 & 16.4 & 9.8 & 23.3 & 0.8 \\
+0.646 & 0.184 & 0.058 & 14.4 & 21.7 & 33.4 & 22.2 & 15.2 & 34.1 & 1.3 \\
+0.856 & 0.335 & 0.059 & 10.9 & 16.4 & 22.2 & 34.8 & 18.5 & 41.7 & 0.7 \\
+0.936 & 0.170 & 0.037 & 5.6 & 9.8 & 15.2 & 18.5 & 13.7 & 24.2 & 1.0 \\
+1.242 & 0.362 & 0.076 & 15.0 & 23.3 & 34.1 & 41.7 & 24.2 & 57.2 & 1.3 \\
+1.382 & 0.005 & 0.005 & 0.5 & 0.8 & 1.3 & 0.7 & 1.0 & 1.3 & 0.3 \\
+
+\hline
+\multicolumn{10}{c}{KM2} \\
+\hline
+0.466 & 0.042 & 0.013 & 1.6 & 1.7 & 1.6 & 1.6 & 1.9 & 0.8 & 0.0 \\
+0.554 & 0.026 & 0.014 & 1.7 & 2.0 & 1.6 & 1.6 & 2.1 & 1.0 & 0.1 \\
+0.646 & 0.136 & 0.016 & 1.6 & 1.6 & 2.5 & 1.8 & 1.7 & 0.7 & -0.1 \\
+0.856 & 0.068 & 0.013 & 1.6 & 1.6 & 1.8 & 1.7 & 1.8 & 0.8 & 0.0 \\
+0.936 & 0.018 & 0.015 & 1.9 & 2.1 & 1.7 & 1.8 & 2.4 & 1.1 & 0.1 \\
+1.242 & 0.014 & 0.007 & 0.8 & 1.0 & 0.7 & 0.8 & 1.1 & 0.5 & 0.1 \\
+1.382 & 0.003 & 0.003 & 0.0 & 0.1 & -0.1 & 0.0 & 0.1 & 0.1 & 0.1 \\
+
+\hline
+\multicolumn{10}{c}{KM3} \\
+\hline
+0.466 & 0.206 & 0.147 & 216.6 & 262.0 & 180.4 & 200.1 & 263.1 & 154.1 & 3.8 \\
+0.554 & 0.223 & 0.179 & 262.0 & 321.7 & 216.0 & 241.6 & 324.2 & 190.0 & 4.9 \\
+0.646 & 0.272 & 0.124 & 180.4 & 216.0 & 152.9 & 167.1 & 216.4 & 126.3 & 2.9 \\
+0.856 & 0.221 & 0.136 & 200.1 & 241.6 & 167.1 & 185.1 & 242.2 & 141.9 & 3.4 \\
+0.936 & 0.224 & 0.182 & 263.1 & 324.2 & 216.4 & 242.2 & 331.2 & 191.9 & 5.0 \\
+1.242 & 0.120 & 0.107 & 154.1 & 190.0 & 126.3 & 141.9 & 191.9 & 113.8 & 3.2 \\
+1.382 & 0.003 & 0.005 & 3.8 & 4.9 & 2.9 & 3.4 & 5.0 & 3.2 & 0.2 \\
+
+\hline
+\multicolumn{10}{c}{KM4} \\
+\hline
+0.466 & 0.120 & 0.089 & 79.9 & 114.6 & 58.7 & 71.7 & 121.9 & 66.7 & -0.1 \\
+0.554 & 0.132 & 0.132 & 114.6 & 175.4 & 78.7 & 101.5 & 187.5 & 101.2 & 0.1 \\
+0.646 & 0.190 & 0.070 & 58.7 & 78.7 & 48.8 & 54.6 & 83.8 & 45.9 & -0.5 \\
+0.856 & 0.138 & 0.081 & 71.7 & 101.5 & 54.6 & 65.2 & 108.0 & 59.0 & -0.2 \\
+0.936 & 0.131 & 0.142 & 121.9 & 187.5 & 83.8 & 108.0 & 202.1 & 108.0 & -0.1 \\
+1.242 & 0.084 & 0.077 & 66.7 & 101.2 & 45.9 & 59.0 & 108.0 & 59.3 & 0.6 \\
+1.382 & 0.018 & 0.009 & -0.1 & 0.1 & -0.5 & -0.2 & -0.1 & 0.6 & 0.9 \\
+
+\hline
+\multicolumn{10}{c}{KM5} \\
+\hline
+0.466 & 0.367 & 0.054 & 29.6 & 34.7 & 13.9 & 22.0 & 35.2 & 10.4 & -0.4 \\
+0.554 & 0.476 & 0.065 & 34.7 & 42.3 & 16.3 & 25.6 & 43.6 & 11.9 & -0.6 \\
+0.646 & 0.229 & 0.029 & 13.9 & 16.3 & 8.5 & 11.7 & 16.4 & 3.7 & -0.3 \\
+0.856 & 0.283 & 0.042 & 22.0 & 25.6 & 11.7 & 17.6 & 25.8 & 7.4 & -0.4 \\
+0.936 & 0.562 & 0.071 & 35.2 & 43.6 & 16.4 & 25.8 & 51.1 & 13.0 & -0.5 \\
+1.242 & 0.251 & 0.033 & 10.4 & 11.9 & 3.7 & 7.4 & 13.0 & 11.0 & 0.4 \\
+1.382 & 0.005 & 0.003 & -0.4 & -0.6 & -0.3 & -0.4 & -0.5 & 0.4 & 0.1 \\
+
+\end{tabular}
+\caption{mlc km reflectance statistics}
+\label{mlc_km_ref_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+
+\hline
+\multicolumn{7}{c}{KM1} \\
+\hline
+3.79 & 312.7 & 4.55 & 2073.3 & 447.9 & 1684.4 & 1947.3 \\
+7.34 & 255.9 & 1.76 & 447.9 & 308.2 & 541.8 & 657.6 \\
+8.53 & 298.2 & 4.81 & 1684.4 & 541.8 & 2317.0 & 2579.9 \\
+11.00 & 300.1 & 5.44 & 1947.3 & 657.6 & 2579.9 & 2957.5 \\
+
+\hline
+\multicolumn{7}{c}{KM2} \\
+\hline
+3.79 & 291.9 & 1.68 & 281.2 & 26.2 & 16.1 & 2.0 \\
+7.34 & 254.3 & 1.12 & 26.2 & 126.0 & 104.7 & 102.4 \\
+8.53 & 285.5 & 1.33 & 16.1 & 104.7 & 176.4 & 178.0 \\
+11.00 & 287.6 & 1.42 & 2.0 & 102.4 & 178.0 & 201.0 \\
+
+\hline
+\multicolumn{7}{c}{KM3} \\
+\hline
+3.79 & 303.6 & 5.89 & 3464.0 & 22.8 & -1246.9 & -1344.6 \\
+7.34 & 254.3 & 1.32 & 22.8 & 173.9 & 311.9 & 317.7 \\
+8.53 & 282.5 & 4.08 & -1246.9 & 311.9 & 1663.4 & 1712.0 \\
+11.00 & 284.7 & 4.23 & -1344.6 & 317.7 & 1712.0 & 1787.1 \\
+
+\hline
+\multicolumn{7}{c}{KM4} \\
+\hline
+3.79 & 296.6 & 7.48 & 5598.9 & 742.4 & -849.9 & -645.4 \\
+7.34 & 251.6 & 2.27 & 742.4 & 514.4 & 530.5 & 680.7 \\
+8.53 & 279.6 & 5.29 & -849.9 & 530.5 & 2798.8 & 2840.6 \\
+11.00 & 280.2 & 5.44 & -645.4 & 680.7 & 2840.6 & 2964.9 \\
+
+\hline
+\multicolumn{7}{c}{KM5} \\
+\hline
+3.79 & 321.9 & 3.61 & 1302.8 & 265.5 & -195.0 & 753.4 \\
+7.34 & 259.5 & 2.65 & 265.5 & 704.8 & 417.3 & 449.5 \\
+8.53 & 301.2 & 3.30 & -195.0 & 417.3 & 1091.7 & 356.6 \\
+11.00 & 307.0 & 2.84 & 753.4 & 449.5 & 356.6 & 809.4 \\
+
+\end{tabular}
+\caption{mlc km brightness temp. statistics}
+\label{mlc_km_temp_stats}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h]
+\centering
+\begin{tabular}{C|C|C|CCCCCCC}
+
+\lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
+\hline0.466 & 0.235 & 0.168 & 282.5 & 334.6 & 210.9 & 235.9 & 318.1 & 201.4 & 7.8 \\
+0.554 & 0.277 & 0.210 & 334.6 & 439.3 & 235.1 & 270.2 & 433.1 & 259.2 & 11.8 \\
+0.646 & 0.244 & 0.137 & 210.9 & 235.1 & 187.2 & 191.6 & 214.0 & 148.8 & 7.0 \\
+0.856 & 0.236 & 0.144 & 235.9 & 270.2 & 191.6 & 206.6 & 249.6 & 165.6 & 6.6 \\
+0.936 & 0.272 & 0.216 & 318.1 & 433.1 & 214.0 & 249.6 & 467.5 & 254.2 & 12.2 \\
+1.242 & 0.157 & 0.127 & 201.4 & 259.2 & 148.8 & 165.6 & 254.2 & 161.3 & 9.1 \\
+1.382 & 0.014 & 0.015 & 7.8 & 11.8 & 7.0 & 6.6 & 12.2 & 9.1 & 2.2 \\
+
+\end{tabular}
+\begin{tabular}{C|C|C|CCCC}
+
+\lambda & \mu & \sigma & \multicolumn{4}{c}{Brightness Temp. Covariance $(\times10^{2})$} \\
+\hline3.79 & 304.2 & 10.11 & 10215.1 & 1242.3 & 4219.0 & 5408.5 \\
+7.34 & 254.3 & 4.13 & 1242.3 & 1706.9 & 3105.3 & 3723.4 \\
+8.53 & 286.3 & 11.10 & 4219.0 & 3105.3 & 12328.1 & 13482.3 \\
+11.00 & 288.5 & 12.30 & 5408.5 & 3723.4 & 13482.3 & 15132.9 \\
+
+\end{tabular}
+\caption{mlc km Uncertain reflectance and brightness temp. statistics}
+\label{mlc_km_unc_stats}
+\end{figure}
+
+
+\end{document}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p1/mod_histograms.png}
+    \includegraphics[width=.48\linewidth]{figures/p1/mod_cumulative.png}
+    \includegraphics[width=.48\linewidth]{figures/p1/mod_histograms_correct.png}
+    \caption{Brightness histograms, cumulative histograms, and discretized histogram-normalized distributions of MODIS bands M15, M11, M10, M05, M04, and M03. Histograms are useful in satellite remote sensing because they characterize the distribution of brightness values for each channel in an image. Subtle features of an image are lost when many brightness values are rounded to the same discrete bin. When enhancement techniques like histogram equalization and matching are applied, these subtle features can be accentuated. Histogram equalization is useful when the probability density of each brightness needs to be as evenly distributed as possible, and histogram equalization is useful for matching the distribution of brightnesses between images, enhancing brightness values in specific subregions, or adapting the brightnesses to a convenient and well-known curve like a gaussian distribution.}
+    \label{p1_histograms}
+\end{figure}
+
+\clearpage
+
+\subsection{Image enhancement with histogram equalization}
+
+\vspace{2em}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p2/img_histograms.png}
+    \includegraphics[width=.48\linewidth]{figures/p2/img_histograms_correct.png}
+    \caption{Original and histogram-corrected brightness frequency distribution hisograms for each MODIS imagery band used in the naturalcolor image.}
+    \label{p2_histograms}
+\end{figure}
+
+\vspace{7.2em}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p2/naturalcolor_original.png}
+    \includegraphics[width=.48\linewidth]{figures/p2/naturalcolor_histnorm.png}
+    \caption{Original MODIS natural color RGB (bands I03, I02, and I01), and histogram-enhanced RGB, both normalized.}
+    \label{p2_enhanced}
+\end{figure}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p2/img_histograms.png}
+    \includegraphics[width=.48\linewidth]{figures/p2/img_histograms_contrast.png}
+    \caption{Original and saturating contrast-stretched brightness frequency distribution hisograms for each MODIS imagery band used in the naturalcolor image.}
+    \label{p2_contrast_histograms}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p2/naturalcolor_original.png}
+    \includegraphics[width=.48\linewidth]{figures/p2/truecolor_contrast.png}
+
+    \caption{Original natural color RGB and natural color RGB enhanced with the saturating linear contrast method. In my opinion, although the contrast-stretched image is more visually appealing, the histogram-equalized one is much better for identifying pixel classes since subtle features are spread over a greater range of pixel values and aren't rounded to the same brightness level as often.}
+    \label{p2_contrast}
+\end{figure}
+
+\clearpage
+
+\subsection{Classification candidate selection}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.50\linewidth]{figures/p4/region_indicator.png}
+    \includegraphics[width=.48\linewidth]{figures/p4/pixel_area_ratio_bordered.png}
+    \caption{These images give context on the region I selected. The first image indicates my region's extent in the West US with the blue rectangle, and the second shows the pixelwise area distortion in my domain, with white representing greater distortion. The Suomi-NPP MODIS granule I retrieved for my region was captured on July 12, 2016 at 2006z. The center of my image is slightly East of the nadir point, so the East edge is subject to the greatest panoramic distortion. The approximate surface area of my region is $200,691.53\,km^2$.}
+    \label{p3_region}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.7\linewidth]{figures/p3/selections.png}
+    \caption{Pixel selections for each class used as training inputs. Cloud samples are shown in teal, crops samples are shown in bright green, mountain vegetation samples are shown in dark green, water samples are shown in blue, grassland samples are shown in yellow, and red sand/clay samples are shown in orange.}
+    \label{p3_pixels}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p3/selectionRGB_M05-M04-M03_tcEQ.png}
+    \includegraphics[width=.48\linewidth]{figures/p3/selectionRGB_M15-NDVI-NDSI_custom.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.48\linewidth]{figures/p3/selectionRGB_M09-M05-M10_dcp.png}
+    \caption{MODIS RGBs used for pixel class selection.}
+    \label{p3_selection_rgbs}
+\end{figure}
+
+Figure \ref{p3_selection_rgbs} displays the RGBs I used to pick samples for pixel classes, the first image is an equalized truecolor image with bands M05, M04, and M03. The second image is a histogram-enhanced custom recipe of band M15, M07-M05 NDVI, and M10-M04 NDSI, which I created in order to easily distinguish clouds and multiple surface types, and the third image is a gamma-enhanced day-cloud phase RGB adaptation of the GOES ABI recipe using bands M09, M05, and M10. The RED band of my custom RGB is M15, which has a peak wavelength near $10.8\mu m$. Band M15 is sensitive to the emissivity properties of surfaces and helps distinguish red clay from arid grassland. The GREEN band is NDVI, which makes vegetation very visible. Last, the BLUE band is NDSI, which separates mountain top snow from bare rock and vegetation, and incidentally distinguishes exposed and rocky areas from vegetation and grassland better than the truecolor.
+
+In order to choose sample pixels, I developed a GUI tool with OpenCV2 that that allows the user to select and deselect individual pixels for each category, and cycles through provided RGB recipes so that the user can select samples with the RGB that best resolves each category.
+
+\begin{figure}
+    \centering
+    \begin{tabular}{C | C C C C C C}
+        \textnormal{Category} & \textnormal{Cloud} & \textnormal{Water} & \textnormal{Mtn Veg} & \textnormal{Clay} & \textnormal{Grassland} & \textnormal{Crops} \\
+        \hline
+        \textnormal{Sample Count} & 874 & 357 & 1085 & 956 & 974 & 475 \\
+    \end{tabular}
+    \caption{Quantity of unique pixels collected as samples for each category.}
+    \label{p3_samples}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{tabular}{R | C C | C C | C C | C C | C C}
+        & \multicolumn{2}{c|}{M15} & \multicolumn{2}{c|}{M14} & \multicolumn{2}{c|}{M12} & \multicolumn{2}{c|}{M10} & \multicolumn{2}{c}{M09} \\
+        \textnormal{Category} & \mu_1 & \sigma_1 & \mu_2 & \sigma_2 & \mu_3 & \sigma_3 & \mu_4 & \sigma_4 & \mu_5 & \sigma_5 \\
+        \hline
+        \textnormal{Cloud} & 5.545 & 1.539  & 4.784 & 1.686  & 0.913 & 0.173  & 0.552 & 0.151  & 0.215 & 0.098 \\
+        \textnormal{Water} & 10.220 & 1.352  & 9.697 & 1.429  & 0.803 & 0.268  & 0.147 & 0.078  & 0.001 & 0.001 \\
+        \textnormal{Mtn Veg} & 9.683 & 0.510  & 9.242 & 0.584  & 0.519 & 0.098  & 0.155 & 0.026  & 0.003 & 0.001 \\
+        \textnormal{Clay} & 13.186 & 0.415  & 12.698 & 0.540  & 1.479 & 0.150  & 0.358 & 0.063  & 0.003 & 0.001 \\
+        \textnormal{Grassland} & 13.389 & 0.511  & 13.171 & 0.502  & 1.500 & 0.156  & 0.372 & 0.061  & 0.003 & 0.002 \\
+        \textnormal{Crops} & 10.575 & 0.685  & 10.188 & 0.769  & 0.719 & 0.161  & 0.220 & 0.032  & 0.002 & 0.001 \\
+    \end{tabular}
+
+    \vspace{1em}
+
+    \begin{tabular}{R | C C | C C | C C | C C}
+        & \multicolumn{2}{c|}{M07} & \multicolumn{2}{c|}{M05} & \multicolumn{2}{c|}{M04} & \multicolumn{2}{c}{M03} \\
+        \textnormal{Category} & \mu_6 & \sigma_6 & \mu_7 & \sigma_7 & \mu_8 & \sigma_8 & \mu_9 & \sigma_9 \\
+        \hline
+        \textnormal{Cloud} & 0.676 & 0.215  & 0.611 & 0.227  & 0.581 & 0.215  & 0.590 & 0.220 \\
+        \textnormal{Water} & 0.141 & 0.065  & 0.118 & 0.041  & 0.117 & 0.024  & 0.118 & 0.019 \\
+        \textnormal{Mtn Veg} & 0.269 & 0.046  & 0.049 & 0.010  & 0.071 & 0.008  & 0.068 & 0.007 \\
+        \textnormal{Clay} & 0.291 & 0.052  & 0.204 & 0.045  & 0.128 & 0.018  & 0.117 & 0.012 \\
+        \textnormal{Grassland} & 0.301 & 0.031  & 0.231 & 0.038  & 0.186 & 0.027  & 0.164 & 0.019 \\
+        \textnormal{Crops} & 0.411 & 0.065  & 0.091 & 0.024  & 0.107 & 0.012  & 0.094 & 0.012 \\
+    \end{tabular}
+    \caption{Means and standard deviations of pixels selected as samples for each surface category.}
+    \label{p3_stats}
+\end{figure}
+
+\clearpage
+
+\subsection{Minimum-distance classification}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.7\linewidth]{figures/p4/mdc_4+5.png}
+    \caption{Minimum-distance classification of my region using all bands listed in Fig \ref{p3_stats}. To perform minimum-distance classification on my image, I extracted and averaged the sample pixels for each class, applied the discriminant function $g_i(\vec{x})=2\vec{m}_i\cdot\vec{x}-\vec{m}_i\cdot\vec{m}_i$ to each pixel $\vec{x}$ and class mean $\vec{m}_i$, and assigned each pixel to the class minimizing $g_i({\vec{x}})$.}
+    \label{p4_mdc}
+\end{figure}
+
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{r | C | C C | C C | C C | C C }
+        \multicolumn{2}{c}{} & \multicolumn{2}{c|}{M15} & \multicolumn{2}{c|}{M14} & \multicolumn{2}{c|}{M12} & \multicolumn{2}{c}{M10} \\
+        Category & \textnormal{Area ($km^2$)} & \mu_1 & \sigma_1 & \mu_2 & \sigma_2 & \mu_3 & \sigma_3 & \mu_4 & \sigma_4 \\
+        \hline
+        Cloud & 2,797 & 5.488 & 1.516  & 4.722 & 1.661  & 0.911 & 0.169  & 0.552 & 0.148  \\
+        Water & 19,109 & 10.164 & 1.359  & 9.637 & 1.437  & 0.795 & 0.266  & 0.144 & 0.077  \\
+        Mtn Veg  & 29,993 & 9.724 & 0.537  & 9.291 & 0.619  & 0.527 & 0.104  & 0.156 & 0.027  \\
+        Clay & 81,778 & 13.189 & 0.429  & 12.706 & 0.550  & 1.478 & 0.153  & 0.354 & 0.063  \\
+        Grassland & 31,163 & 13.369 & 0.517  & 13.154 & 0.514  & 1.490 & 0.159  & 0.372 & 0.059  \\
+        Crops & 35,850 & 10.560 & 0.675  & 10.172 & 0.758  & 0.715 & 0.159  & 0.218 & 0.032  \\
+    \end{tabular}
+
+    \vspace{1em}
+
+    \begin{tabular}{r | C C | C C | C C | C C | C C}
+        & \multicolumn{2}{c|}{M09} & \multicolumn{2}{c|}{M07} & \multicolumn{2}{c|}{M05} & \multicolumn{2}{c|}{M04} & \multicolumn{2}{c}{M03} \\
+        \textnormal{Category} & \mu_5 & \sigma_5 & \mu_6 & \sigma_6 & \mu_7 & \sigma_7 & \mu_8 & \sigma_8 & \mu_9 & \sigma_9 \\
+        \hline
+        Cloud & 0.218 & 0.098 & 0.411 & 0.065  & 0.091 & 0.023  & 0.107 & 0.012  & 0.094 & 0.012 \\
+        Water & 0.001 & 0.001 & 0.299 & 0.031  & 0.228 & 0.040  & 0.184 & 0.028  & 0.162 & 0.019 \\
+        Mtn veg & 0.003 & 0.001 & 0.289 & 0.051  & 0.203 & 0.044  & 0.127 & 0.018  & 0.116 & 0.012 \\
+        Clay & 0.003 & 0.001 & 0.269 & 0.044  & 0.050 & 0.011  & 0.071 & 0.008  & 0.069 & 0.007 \\
+        Grassland & 0.003 & 0.002 & 0.139 & 0.065  & 0.117 & 0.041  & 0.116 & 0.024  & 0.118 & 0.019 \\
+        Crops & 0.002 & 0.001 & 0.682 & 0.214  & 0.619 & 0.226  & 0.588 & 0.214  & 0.598 & 0.219 \\
+    \end{tabular}
+    \caption{Area coverage and statistics for each category and input band.}
+    \label{p4_stats}
+\end{figure}
+
+\clearpage
+
+\subsection{Maximum-likelihood classification}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.7\linewidth]{figures/p5/heatmap_M10+M15.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.48\linewidth]{figures/p5/band_M10.png}
+    \includegraphics[width=.48\linewidth]{figures/p5/band_M15.png}
+    \caption{Intensity heat map of bands M10 and M15, and greyscale images of band M10 and M15, respectively. Band M10 peaks at $1.61\mu m$, and band M15 peaks at $10.76\mu m$. I chose these bands because the nonlinear heatmap suggests that the similarities of some surface types are easier to isolate when the surfaces' properties differ between bands.}
+    \label{p5_inputs}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.7\linewidth]{figures/p5/mlc_4+5_M10+M15.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.7\linewidth]{figures/p5/mlc_4+5_M15+M14+M12+M10+M09+M07+M05+M04+M03.png}
+    \caption{Maximum-likelihood classification of my region. The first image shows classes assigned using only bands M10 and M15, and the second image shows classes assigned using all 9 bands I selected. The 2-band version has high skill in distinguishing clouds and vegetation from other surface types, but misclassified snow on the mountain peaks as water, and misclassified much of the unvegetated ground. The all-band version had much higher skill, and closely emulated the surfaces I selected for my training samples.}
+    \label{p5_mlc}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{ r | C | C C | C C }
+        \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{M10} & \multicolumn{2}{c}{M15} \\
+        Category & \textnormal{Area ($km^2$)} & \mu_1 & \sigma_1 & \mu_2 & \sigma_2 \\
+        \hline
+        Cloud & 4,860 & 0.468 & 0.139  & 6.783 & 1.569 \\
+        Water & 818 & 0.103 & 0.023  & 9.278 & 0.389 \\
+        Mtn Veg & 34,785 & 0.183 & 0.037  & 10.509 & 0.917 \\
+        Clay & 83,785 & 0.288 & 0.039  & 12.586 & 0.683 \\
+        Grassland & 43,843 & 0.391 & 0.037  & 13.233 & 0.447 \\
+        Crops & 32,601 & 0.217 & 0.025  & 10.460 & 0.532 \\
+    \end{tabular}
+    \caption{Bands M10 and M15 maximum-likelihood mean and standard deviation for each category, and each category's area coverage. Area coverage was calculated by taking the sum of the area of each pixel for each class based on the area distortion map shown in Figure \ref{p3_region}.}
+    \label{p5_2band_stats}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{r | C | C C | C C | C C | C C }
+        \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{M15} & \multicolumn{2}{c|}{M14} & \multicolumn{2}{c|}{M12} & \multicolumn{2}{c}{M10} \\
+        Category & \textnormal{Area ($km^2$)} & \mu_1 & \sigma_1 & \mu_2 & \sigma_2 & \mu_3 & \sigma_3 & \mu_4 & \sigma_4 \\
+        \hline
+        Cloud & 8,397 & 8.204 & 2.130  & 7.705 & 2.334  & 0.896 & 0.191  & 0.378 & 0.158 \\
+        Water & 246 & 9.533 & 0.907  & 8.986 & 0.999  & 0.669 & 0.200  & 0.109 & 0.053 \\
+        Mtn Veg & 52,797 & 10.512 & 0.831  & 10.195 & 0.961  & 0.699 & 0.169  & 0.195 & 0.037 \\
+        Clay & 52,412 & 12.445 & 0.842  & 12.144 & 0.879  & 1.208 & 0.243  & 0.290 & 0.068 \\
+        Grassland & 77,052 & 12.897 & 0.816  & 12.707 & 0.899  & 1.331 & 0.216  & 0.339 & 0.056 \\
+        Crops & 9,785 & 11.194 & 0.698  & 10.892 & 0.806  & 0.848 & 0.163  & 0.234 & 0.032 \\
+    \end{tabular}
+
+    \vspace{1em}
+
+    \begin{tabular}{r | C C | C C | C C | C C | C C}
+        & \multicolumn{2}{c|}{M09} & \multicolumn{2}{c|}{M07} & \multicolumn{2}{c|}{M05} & \multicolumn{2}{c|}{M04} & \multicolumn{2}{c}{M03} \\
+        \textnormal{Category} & \mu_5 & \sigma_5 & \mu_6 & \sigma_6 & \mu_7 & \sigma_7 & \mu_8 & \sigma_8 & \mu_9 & \sigma_9 \\
+        \hline
+        Cloud & 0.096 & 0.087  & 0.405 & 0.194  & 0.310 & 0.206  & 0.296 & 0.193  & 0.299 & 0.198 \\
+        Water & 0.001 & 0.000  & 0.108 & 0.046  & 0.096 & 0.031  & 0.107 & 0.027  & 0.111 & 0.022 \\
+        Mtn Veg & 0.004 & 0.002  & 0.256 & 0.041  & 0.070 & 0.017  & 0.083 & 0.011  & 0.079 & 0.010 \\
+        Clay & 0.003 & 0.001  & 0.251 & 0.047  & 0.151 & 0.051  & 0.117 & 0.021  & 0.110 & 0.016 \\
+        Grassland & 0.003 & 0.002  & 0.276 & 0.031  & 0.186 & 0.042  & 0.155 & 0.027  & 0.141 & 0.019 \\
+        Crops & 0.002 & 0.001  & 0.317 & 0.061  & 0.101 & 0.021  & 0.108 & 0.011  & 0.100 & 0.010 \\
+    \end{tabular}
+    \caption{All-band maximum-likelihood mean and standard deviation of each band for each category, and each category's area coverage.}
+    \label{p5_allband_stats}
+\end{figure}
+
+\clearpage
+
+\subsection{K-means classification}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p6/k-means_M10+M15_4cat.png}
+    \includegraphics[width=.48\linewidth]{figures/p6/k-means_M10+M15_5cat.png}
+    \includegraphics[width=.48\linewidth]{figures/p6/k-means_M10+M15_6cat.png}
+    \caption{K-means classification using MODIS bands M10 and M15. Images are initialized with 4, 5, and 6 categories, respectively. As shown in Figure \ref{p5_inputs}, MODIS bands M10 and M15 have a nonlinear correlation that makes clouds easy to distinguish, and visibly differentiates vegetated surfaces from arid ground. These affinities are reflected in the K-means classification results, which starkly separate clouds, vegetation, and grasslands/red clay. My K-means algorithm randomly-selects pixels as centroids, then uses euclidean distance to assign each pixel to the closest cluster. Once pixels are collected, the algorithm calculates the new mean for each cluster and repeats at the euclidean distance operation until all the means are equal up to 3 decimal accuracy. I found that the randomly-initialized centroids would sometimes fail to find any nearby pixels, so I implemented a condition that re-initializes a centroid up to 5 times if its cluster has no members. After 5 failures, the cluster is dropped. My results show that 4 classes is too few since no unvegetated surface texture is identified, and 6 classes is too many since no additional surface types were found. I also noticed that K-means classified much of the lower-elevation vegetated surfaces separately from the higher-elevation regions. After looking at locations near the border of the 2 classes with Google street view, I realized that they finely trace the altitude-driven transition from forests containing mostly ponderosa pines and aspen trees to forests dominated by spruce-fir, which is corroborated by Colorado State Forest Service.\newline \textsc{https://csfs.colostate.edu/colorado-forests/forest-types/}}
+    \label{p6_456_classes}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.98\linewidth]{figures/p6/k-means_M10+M15_5cat_noborder.png}
+    \caption{5-category k-means classification with bands M10 and M15. }
+    \label{p6_noborder}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{r | C | C C | C C |}
+        Class & \textnormal{Count} & \textnormal{M10 $\mu$} & \textnormal{M10 $\sigma$} & \textnormal{M15 $\mu$} & \textnormal{M15 $\sigma$} \\
+        \hline
+        Class 1 & 181779 & 0.267 & 0.039 & 1.306 & 0.174 \\
+        Class 2 & 95648 & 0.261 & 0.048 & 0.799 & 0.134 \\
+        Class 3 & 34619 & 0.268 & 0.067 & 0.565 & 0.143 \\
+        Class 4 & 11051 & 0.289 & 0.033 & 1.651 & 0.067 \\
+        Class 5 & 4583 & 0.612 & 0.172 & 0.933 & 0.134 \\
+    \end{tabular}
+    \caption{Pixel counts, mean, and standard deviation of each pixel class identified by K-means classification with bands M10 and M15.}
+\end{figure}
+
+\clearpage
+
+\subsection{Principle component analysis}
+
+%\begin{figure}
+%    \centering
+%    \begin{equation}\nonumber
+%        \begin{pmatrix}
+%            2.3843 & 2.5338 & 0.4513 & 0.0596 & -0.0204 & -0.0259 & 0.0245 & -0.0050 & -0.0125 \\
+%            2.5338 & 2.7256 & 0.4703 & 0.0585 & -0.0218 & -0.0313 & 0.0211 & -0.0076 & -0.0151 \\
+%            0.4513 & 0.4703 & 0.1151 & 0.0233 & -0.0006 & 0.0027 & 0.0175 & 0.0089 & 0.0072 \\
+%            0.0596 & 0.0585 & 0.0233 & 0.0076 & 0.0008 & 0.0033 & 0.0064 & 0.0043 & 0.0039 \\
+%            -0.0204 & -0.0218 & -0.0006 & 0.0008 & 0.0006 & 0.0011 & 0.0013 & 0.0013 & 0.0013 \\
+%            -0.0259 & -0.0313 & 0.0027 & 0.0033 & 0.0011 & 0.0041 & 0.0036 & 0.0031 & 0.0030 \\
+%            0.0245 & 0.0211 & 0.0175 & 0.0064 & 0.0013 & 0.0036 & 0.0065 & 0.0048 & 0.0045 \\
+%            -0.0050 & -0.0076 & 0.0089 & 0.0043 & 0.0013 & 0.0031 & 0.0048 & 0.0039 & 0.0038 \\
+%            -0.0125 & -0.0151 & 0.0072 & 0.0039 & 0.0013 & 0.0030 & 0.0045 & 0.0038 & 0.0038 \\
+%        \end{pmatrix}
+%    \end{equation}
+%
+%    \begin{tabular}{ C | C C C C C C C C C}
+%        \lambda & \vec{v}_1 & \vec{v}_2  & \vec{v}_3  & \vec{v}_4  & \vec{v}_5  & \vec{v}_6  & \vec{v}_7  & \vec{v}_8  & \vec{v}_9 \\
+%        \hline
+%        0.0001 & 0.006 & -0.331 & -0.087 & -0.157 & 0.414 & -0.062 & 0.092 & 0.648 & -0.502 \\
+%        0.0001 & -0.003 & -0.237 & -0.172 & -0.151 & 0.453 & -0.186 & 0.661 & -0.382 & 0.259 \\
+%        0.0001 & -0.001 & -0.248 & -0.151 & -0.211 & 0.436 & -0.128 & -0.716 & -0.098 & 0.373 \\
+%        0.0006 & -0.007 & -0.209 & -0.034 & -0.695 & -0.544 & -0.415 & 0.027 & 0.029 & 0.007 \\
+%        0.0008 & -0.005 & -0.076 & -0.083 & 0.006 & 0.056 & -0.109 & -0.197 & -0.632 & -0.729 \\
+%        0.0022 & 0.016 & -0.316 & -0.057 & -0.351 & -0.091 & 0.865 & 0.029 & -0.120 & -0.003 \\
+%        0.0131 & 0.127 & -0.740 & -0.133 & 0.541 & -0.326 & -0.095 & -0.012 & 0.001 & 0.086 \\
+%        0.0542 & 0.724 & 0.244 & -0.639 & -0.020 & -0.055 & 0.026 & 0.001 & 0.053 & -0.013 \\
+%        5.180 & 0.677 & -0.115 & 0.708 & -0.079 & 0.116 & -0.037 & -0.000 & -0.068 & -0.001 \\
+%    \end{tabular}
+%    \caption{Covariance matrix and eigenvalues ($\lambda$) and normalized eigenvector components ($\vec{v})$ used for principle component analysis of my region.}
+%\end{figure}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.6\linewidth]{figures/p7/pca_4+6+8_eq.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.4\linewidth]{figures/p7/pca_0+3+5_eq.png}
+    \includegraphics[width=.4\linewidth]{figures/p7/region_M05+M07+M15.png}
+    \caption{Principle component analysis results. The first image was generated using only bands M05, M07, and M15, and the second shows 3 of the 9 components found when all 9 bands were used for PCA. The third image is a normalized RGB of bands M05, M07, and M15. Compared to the original composite, the 3-band image is good at resolving clouds and multiple surface types, but still doesn't easily isolate water or vegetation types, and the all-band components I chose are skillful at distinguishing vegetation types and surface texture, but fails to clearly distinguish clouds from mountain vegetation. Judging by the color distribution of the 3-band image, the red component appears to scale positively with highly vegetated surfaces and negatively with clouds, the green band correlates with cloud cover and vegetation, and the blue band correlates with bare ground.}
+    \label{p7_results}
+\end{figure}
+
+\begin{figure}[h!]
+    \begin{center}
+    $
+    \begin{pmatrix}
+        0.0065 & 0.0036 & 0.0245 \\
+        0.0036 & 0.0041 & -0.0259 \\
+        0.0245 & -0.0259 & 2.3843 \\
+    \end{pmatrix}
+    $
+    \begin{tabular}{ C | C | C C C }
+        & \lambda & \vec{v}_1 & \vec{v}_2 & \vec{v}_3 \\
+        \hline
+        PC1 & 2.3848 & -0.0103 & -0.8063 & 0.5915 \\
+        PC2 & 0.0091 & 0.0109 & -0.5915 & -0.8062 \\
+        PC3 & 0.0010 & -0.9999 & 0.0019 & -0.0148 \\
+    \end{tabular}
+    \end{center}
+    \caption{Covariance matrix, eigenvalues ($\lambda$), and normalized eigenvector components ($\vec{v}$) used for principle component analysis of my region.}
+    \label{p7_cov_ev}
+\end{figure}
+
+\clearpage
+
+\subsection{Edge detection}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_vertical.png}
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_horizontal.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_diagonal1.png}
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_diagonal2.png}
+    \caption{ASTER image after application of vertical, horizontal, forward diagonal, and back diagonal filters, respectively. Fine structures are much easier to identify when they run parallel to an edge filter's kernel. For example, the vertical lines of the harbor are easier to resolve in the vertically-filtered image, and the San Mateo-Hayward Bridge is easiest to identify in the images filtered with horizontal and forward-diagonal kernels.}
+    \label{p8_edgesteps}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.6\linewidth]{figures/p8/aster_original.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_sequential.png}
+    \includegraphics[width=.48\linewidth]{figures/p8/aster_multi.png}
+
+    \caption{Original ASTER image, histogram-equalized edge detection using consecutive application of filters, histogram-equalized edge detection using each filter applied independently, then combined with euclidean distance in the same manner as the Sobel operator. Both edge detection methods appear to be effective since the edges of structures are much easier to resolve than in the original image, but even after histogram equalization the image generated with sequentially-applied filters appears noisier and more difficult to resolve than the euclidean distance scheme.}
+    \label{p8_edgeresults}
+\end{figure}
+
+\clearpage
+
+\subsection{Roberts and Sobel operators}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.6\linewidth]{figures/p9/aster_roberts.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.6\linewidth]{figures/p9/aster_sobel.png}
+
+    \caption{ASTER image after applications of the Roberts and the Sobel operators, respectively. The results for each method are similar overall, but the Sobel operator resolves edges more finely, and doesn't generate as much noise in areas with features that are too small to be reasonably considered edges.}
+    \label{p9_rob_sob}
+\end{figure}
+
+\clearpage
+
+\subsection{Landsat MSS cloud and water-masked NDVI}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p10/ndvi_masked_skparams.png}
+    \includegraphics[width=.48\linewidth]{figures/p10/ndvi_masked_myparams.png}
+
+    \vspace{.2em}
+    \includegraphics[width=.48\linewidth]{figures/p10/cbar.png}
+    \caption{Normalized NDVIs with clouds masked as white, and water masked as black. In both images, water is masked using the NDWI recipe (GREEN-NIR)/(GREEN+NIR) with Landsat MSS bands 1 ($0.5-0.6\mu m$) and 3 ($0.7-0.8\mu m$). The first image applies the Saunders \& Kriebel method as closely as possible, substituting AVHRR band 1 ($.62\mu m$) for Landsat band 1, and AVHRR band 2 ($.8\mu m$) for Landsat band 4 ($0.8-1.1\mu m$). The second image is an adaptation of the S\&K method using custom thresholds. The colorbar at the bottom is a rendering of the 256 brightness bins used in generating the NDVI RGB.}
+    \label{p9_landsat}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{ c c c c }
+        Maximum & Minimum & Mean & Std. Dev. \\
+        \hline
+        0.7125 & 0.0570 & 0.5041 & 0.0079 \\
+    \end{tabular}
+    \caption{Statistics for unmasked NDVI values.}
+    \label{p9_stats}
+\end{figure}
+
+Figure \ref{p9_landsat} displays my results as an HSV-mapped RGB with gamma enhancement, and Figure \ref{p9_stats} shows statistics on the NDVI values that weren't masked as clouds or water. The granule I used was captured by Landsat 3 over the Banaue Rice Terraces on Luzon island in the Phillipines on March 11, 1979. The rice paddy terraces are positioned East of the Lagban river, in the region with the highest NDVI values. In order to mask water in my image, I simply set a lower-bound threshold of $.39$ on the NDWI recipe specified in Figure \ref{p9_landsat}. Since the MSS instrument on Landsat 3 isn't equipped with any thermal IR bands (except for the one that failed soon after launch), I only performed tests 3 and 4 of the Saunders \& Kriebel method. Tests 3 and 4 stipulate that a cloud candidate must have a RED band reflectance greater than $15\%$, and a NIR to RED band ratio less than $1.6$. These thresholds weren't restrictive enough to be effective on my image, probably due to the additional atmospheric absorption in the NIR region covered by MSS band 4. When I increased test 1's threshold to a $38\%$ lower bound for the RED band and decreased test 2's NIR/RED ratio threshold to a $.9$ lower bound, the test successfully masked the few cumulus clouds in my image, as well as some valley fog on the Lagben river.
+
+\clearpage
+
+\subsection{Amazon fire detection}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.99\linewidth]{figures/p11/fire_mosaic_labeled.png}
+    \caption{Mosaic of the progression of the field fire I selected, which burned September 3-5, 2018. The \textsc{x} marks the pixel closest to $60^\circ W$, $10^\circ S$. I specifically focus on the image captured by Aqua on September 4 at 1715z. This granule was acquired only 3 minutes prior to the JPSS-1 VIIRS granule shown in the top right.}
+    \label{p11_mosaic}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.32\linewidth]{figures/p11/amazon_fireRGB_IRdiff+LWIR+VIS.png}
+    \includegraphics[width=.32\linewidth]{figures/p11/amazon_fc_cand.png}
+    \includegraphics[width=.32\linewidth]{figures/p11/amazon_fc_fires.png}
+    \caption{My custom-enhanced fire RGB, pixels identified as fire candidates by the Flasse \& Ceccato (F\&C) method, and fires confirmed by F\&C. 5,982 pixels were positively identified as fires with the standard thresholds. The RGB in the first image is a gamma-stretched composite with RED=SWIR-LWIR, GREEN=LWIR, and BLUE=VIS, where the visible channel is the average reflectance in the $.459-.670\mu m$ range (see Figure \ref{p11_my} caption). These are the same channels I used as inputs for the F\&C procedure.}
+    \label{p11_fc}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.45\linewidth]{figures/p11/amazon_my_candidates.png}
+    \includegraphics[width=.45\linewidth]{figures/p11/amazon_my_fires.png}
+    \caption{Pixels identified as fire candidates using custom thresholds, and subsequent pixels identified as fires with the F\&C confirmation methodology. When selecting pixel candidates, I decreased the SWIR lower bound from $314K$ to $311K$, decreased the SWIR-LWIR difference threshold to $8K$, decreased the upper bound of NIR reflectivity to $10 \%$, and set a new lower bound of $280 K$ on the LWIR threshold. I chose these values to better approximate the locations of the relatively isolated red pixels in my fire RGB, as the standard F\&C method demonstrated in Figure \ref{p11_fc} seemed to classify fires far too generously. The only significant differences between the pixel candidates my thresholds selected and the pixels confirmed to be fires are that some groupings of candidate pixels over the low-lying clouds in the bottom right were disqualified as fires by the F\&C algorithm. I believe these changes were necessary because I substituted AVHRR band 2 ($.725-1.0\mu m$) for the average reflectance of MODIS bands 4, 3, and 1 ($.459-.670\mu m$ in total) since no NIR bands were available in the L1b granule I used. The $.8-1\mu m$ edge of the blackbody radiance curve for a $1000K$ fire is small, but much greater than in the visible range, and NIR wavelengths are attenuated less by Rayleigh scattering than in the visible spectrum. Either or both of these factors may have contributed to decreasing observed radiance in the MODIS visible bands compared to AVHRR band 2, which warrants decreasing the reflectivity threshold. Ultimately, 928 pixels were positively identified as fires using my custom thresholds.}
+    \label{p11_my}
+\end{figure}
+
+\clearpage
+
+\subsection{FFT noise reduction}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=.48\linewidth]{figures/p12/fft_input_noise.png}
+    \includegraphics[width=.48\linewidth]{figures/p12/fft_filtered_radiuslow.png}
+    \includegraphics[width=.48\linewidth]{figures/p12/fft_filtered_radiushigh.png}
+    \includegraphics[width=.48\linewidth]{figures/p12/fft_filtered_reconstruction.png}
+    \caption{Original noisy image, noisy image with a radius filter removing middle-frequency values (F1), noisy image with a radius filter removing highest and lowest-frequency values (F2), and a denoised reconstruction. I implemented FFT and inverse FFT with the Cooley-Turkey algorithm, which required me to use bilinear interpolation to stretch the image to the nearest power of 2 side length (1024). After converting the image to phase space, I manually selected the frequency regions to remove for each filter with an OpenCV2-based GUI tool that I built. Once the filters were applied, I generated the reconstruction by normalizing the F1 brightness array to $[0,1]$, then using restricting F1 to a lower-bound threshold of $.078$ to identify and mask noise pixels. Finally, I replaced the masked pixels in the noisy image with the pixel values smoothed by F2. The resulting reconstruction still has residual noise since F2 only ``smears'' the noisy pixels, but the denoised image is visibly smoother.}
+    \label{p11_fc}
+\end{figure}
+
+\clearpage
+
+\section{Code comment}
+
+One of my major goals for graduate school is to develop code I write for homework and research into a highly generalized and modular python codebase with a minimal number of dependencies. To that end, I wrote more than 3,000 lines of python for this assignment as a series of modules that can be imported as a python package, which I merged with a package I previously wrote to work with ABI data. All figures and analysis in this document was performed using relatively small scripts importing the high-level methods contained in the package. My code is available on github with the link below.
+
+\vspace{1em}
+
+\begin{center}
+    \url{https://github.com/Mitchell-D/aes670hw2/}
+\end{center}
+
+\vspace{1em}
+
+\noindent
+\textbf{Capabilities of my codebase:}
+
+\begin{itemize}
+    \item{Search the MODAPS-LAADS DAAC (LWS API) for any available product, and narrow search by illumination, geographic range, and a target time or time range, and download products that match the conditions.}
+    \item{Process MODIS and VIIRS L1b data and georeference arrays into geographically-specified subgrids of a requested set of bands.}
+    \item{Query the NOAA AWS bucket for GOES East or GOES West ABI L1b data at a target time, and download a prespecified set of bands.}
+    \item{Process ABI data to fit a region specified geographically or in pixel coordinates.}
+    \item{GUI tools for manually selecting sub-regions, picking pixel categories from RGBs, selecting parameter values for arbitrary enhancement functions (linear gamma, contrast stretch, noise filters) using a sliding bar and a live-rendered image, and manually removing specific regions in the phase space of an array with a click-and-drag function.}
+    \item{Georeference and generate arrays of viewing and solar zenith angles for any geostationary satellite given basic information on the Sun/Earth/satellite geometry.}
+    \item{Custom implementations of all classification and filtering algorithms, with standardized inputs and outputs.}
+    \item{Methods for procedurally rasterizing markers, boxes, and circles, and text onto an ndarray using geographic or pixel-coordinate reference.}
+    \item{Destripe and perform bowtie-correction on arbitrary pixel grids.}
+    \item{Calculate and print a variety of statistical features for a provided array.}
+    \item{Generalized methods for plotting data in a variety of formats (histograms, heatmaps, projected rasters, raw images).}
+    \item{Library of methods encoding recipes for a wide range of common RGBs (truecolor, day/night cloud phase, differential water vapor, air mass, etc).}
+\end{itemize}
+

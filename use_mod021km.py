@@ -26,7 +26,7 @@ region_width, region_height = 640, 512
 hdf_path = data_dir.joinpath(f"subgrid.hdf")
 subgrid_pkl = data_dir.joinpath(f"subgrid.pkl")
 kmeans_pkl = data_dir.joinpath(f"subgrid_kmeans.pkl")
-thresh_pkl = data_dir.joinpath(f"subgrid_masks.pkl")
+thresh_pkl = data_dir.joinpath(f"subgrid_thresh.pkl")
 '''
 
 """ Subgrid 2 """
@@ -46,6 +46,7 @@ kmeans_pkl = data_dir.joinpath(f"subgrid2_kmeans.pkl")
 thresh_pkl = data_dir.joinpath(f"subgrid2_thresh.pkl")
 samples_pkl = data_dir.joinpath(f"subgrid2_samples.pkl")
 mlc_pkl = data_dir.joinpath(f"subgrid2_mlc.pkl")
+masks_pkl = data_dir.joinpath(f"subgrid2_masks.pkl")
 
 
 token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJBUFMgT0F1dGgyIEF1dGhlbnRpY2F0b3IiLCJpYXQiOjE2Nzg0MDEyNzgsIm5iZiI6MTY3ODQwMTI3OCwiZXhwIjoxNjkzOTUzMjc4LCJ1aWQiOiJtZG9kc29uIiwiZW1haWxfYWRkcmVzcyI6Im10ZDAwMTJAdWFoLmVkdSIsInRva2VuQ3JlYXRvciI6Im1kb2Rzb24ifQ.gwlWtdrGZ1CNqeGuNvj841SjnC1TkUkjxb6r-w4SOmk"
@@ -238,8 +239,8 @@ def get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl):
                                         rgb_match=True)
         # Water is most ambiguous, so negate all other masks
         masks_dict = pkl.load(thresh_pkl.open("rb"))
-        #mask_labels, all_masks = tuple(zip(*masks_dict.items()))
-        #not_water_mask = np.any(np.dstack(all_masks),axis=2)
+        #mask_labels, all_thresh_masks = tuple(zip(*masks_dict.items()))
+        #not_water_mask = np.any(np.dstack(all_thresh_masks),axis=2)
         #not_water_mask = np.logical_or(not_water_mask, mask)
         #water_mask = np.logical_not(not_water_mask)
         mask = np.logical_or(mask, land_mask)
@@ -346,8 +347,8 @@ def get_sg1_surface_masks(subgrid, fig_dir, thresh_pkl):
                                      use_hsv=True, rgb_match=True)
         # Water is most ambiguous, so negate all other masks
         masks_dict = pkl.load(thresh_pkl.open("rb"))
-        mask_labels, all_masks = tuple(zip(*masks_dict.items()))
-        not_water_mask = np.any(np.dstack(all_masks),axis=2)
+        mask_labels, all_thresh_masks = tuple(zip(*masks_dict.items()))
+        not_water_mask = np.any(np.dstack(all_thresh_masks),axis=2)
         not_water_mask = np.logical_or(not_water_mask, mask)
         water_mask = np.logical_not(not_water_mask)
         rgb[np.where(np.dstack([not_water_mask for i in range(3)]))] = 0
@@ -468,8 +469,8 @@ if __name__=="__main__":
     #km_bands=(3,4,1,2,7,29,31,32) # Batch 5
     #km_bands=(3,4,1,2,7,26,29,31,32) # Batch 6
     #km_bands=(3,4,1,2,7,26,29,31,32,33) # Batch 7 w/ cirrus band
-    km_bands=(3,4,1,2,7,19,29,31,32,33) # Batch 8 w/ NIR abs.
-    #km_bands=(1,2,3,4,5,19,20,26,28,29,31) # Batch 9; batch 2 w/20 not 21
+    #km_bands=(3,4,1,2,7,19,29,31,32,33) # Batch 8 w/ NIR abs.
+    km_bands=(1,2,3,4,5,19,20,26,28,29,31) # Batch 9; batch 2 w/20 not 21
     #km_bands=(3,4,1,2,7,19,29,31,32,33) # Batch 10; batch 8
     km_class_count = 10
     do_kmeans(
@@ -493,68 +494,64 @@ if __name__=="__main__":
     new_km[np.where(km==0)] = 0 # vegetation
     new_km[np.where(km==8)] = 0 # vegetation
     new_km[np.where(km==1)] = 1 # water
-    new_km[np.where(km==2)] = 2 # mid clouds
     new_km[np.where(km==6)] = 2 # mid clouds
     new_km[np.where(km==7)] = 2 # mid clouds
+    new_km[np.where(km==2)] = 3 # cirrus
     new_km[np.where(km==9)] = 3 # cirrus
     new_km[np.where(km==3)] = 3 # cirrus
     new_km[np.where(km==4)] = 4 # arid
     new_km[np.where(km==5)] = 4 # arid
 
-    km_dict["merged"] = (new_km, km_bands)
-    #pkl.dump(km_dict, kmeans_pkl.open("wb"))
+    #km_dict["merged"] = (new_km, km_bands)
+    km_dict["merged2"] = (new_km, km_bands)
+    pkl.dump(km_dict, kmeans_pkl.open("wb"))
     # Subjective class ID order of batch9c10 classification
     km_order = ["vegetation", "water", "water_cloud", "ice_cloud", "arid"]
-    km_colors = { colors[l] for l in km_order }
+    km_colors = [ colors[l] for l in km_order ]
     do_kmeans(
             subgrid,
             km_bands=km_bands,
             # Be very careful with label keys! Don't overwrites something.
             #batch_label="merged",
+            batch_label="merged2",
             km_class_count=5,
             km_pkl=kmeans_pkl,
             fig_dir=fig_dir,
             title=f"Merged Batch 9 Classes",
             get_new=False,
             plot_classes=True,
-            colors=km_order,
+            colors=km_colors,
             )
     '''
 
     '''
-    km_masks = [np.full_like(km, False, dtype=bool) for i in range(8)]
-    for j in range(km.shape[0]):
-        for i in range(km.shape[1]):
-            km_masks[km[j,i]][j,i] = True
-    '''
-
-    #'''
     """ Do maximum-likelihood classification """
     samples = 400
     thresh = .9
-    #mlc_bands = (1,2,3,4,5,19,20,26,28,29,31) # Batch 9
-    mlc_bands = None
-    mlc_batch = "all-thresh"
+    mlc_bands = (1,2,3,4,5,19,20,26,28,29,31) # Batch 9
+    #mlc_bands = (1,2,3,4,5,19,20,28,29,31,32) # Batch 10
+    #mlc_bands = None
+    #mlc_batch = "all-thresh"
     #mlc_batch = "b9-thresh"
-    use_km = False
+    #mlc_batch = "b10-thresh"
+    use_km = True
     #mlc_batch = "all-km"
-    #mlc_batch = "b9-km"
+    mlc_batch = "b9-km"
     title = f"Maximum-likelihood Classification Results ({mlc_batch})"
-
     if use_km:
         """ Get samples from K-means results """
         km_order = ["vegetation", "water", "water_cloud", "ice_cloud", "arid"]
         km_colors = [ colors[l] for l in km_order ]
         if thresh:
             km_colors.append(colors["uncertain"])
-        km_ints_merged, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
+        #km_ints_merged, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
+        km_ints_merged, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged2"]
         # For each K-means class, get a list of pixel samples
         mlc_samples = [MOD021KM.mask_to_idx(M, samples)
                       for M in MOD021KM.ints_to_masks(km_ints_merged)]
         mlc_labels = [f"KM{i+1}" for i in range(len(mlc_samples))]
         tmp_mlc_dict = {mlc_labels[i]:mlc_samples[i]
                        for i in range(len(mlc_labels))}
-
     else:
         """ Get samples from my threshold masks """
         # Convert masks to #samples index tuples
@@ -563,6 +560,7 @@ if __name__=="__main__":
                 for c,M in pkl.load(thresh_pkl.open("rb")).items()])
         tmp_mlc_dict = {mlc_labels[i]:mlc_samples[i]
                        for i in range(len(mlc_labels))}
+
     """ Run MLC and plot classes. """
     mlc_ints, mlc_labels = subgrid.get_mlc(tmp_mlc_dict,mlc_bands,thresh)
     gp.plot_classes(
@@ -588,26 +586,198 @@ if __name__=="__main__":
     mlc_dict[mlc_batch] = (mlc_ints, mlc_labels)
     pkl.dump(samples_dict, samples_pkl.open("wb"))
     pkl.dump(mlc_dict, mlc_pkl.open("wb"))
-    #'''
-    exit(0)
+    '''
 
-    """ Calculate the confusion matrices """
+    '''
+    """ Classification done. collect all masks into one pkl """
     # Returns the number of elements in common between masks
     confusion = lambda m1,m2: np.count_nonzero(np.logical_and(m1,m2))
-    km_ints, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged"]
-    km_masks = MOD021KM.ints_to_masks(km_ints)
-    thresh_labels, thresh_masks = zip(*[
-        (c,MOD021KM.mask_to_idx(M, samples))
-        for c,M in pkl.load(thresh_pkl.open("rb")).items()])
-    mlc_run = "b9-km"
-    mlc_ints, mlc_labels = pkl.load(mlc_pkl.open("rb"))[mlc_run]
-    samples_pixels, samples_labels = pkl.load(samples_pkl.open("rb"))[mlc_run]
-    MOD021KM.idx_to_mask(
-            [list(zip(*XY)) for XY in samples_pixels],subgrid.shape)
 
-    for c in range(len(class_covs)):
-        for j in class_covs[c].shape[0]:
-            row_str = ""
-            for i in class_covs[c].shape[1]:
-                row_str+=f" {class_covs[c][j,i]:.3f} "
-            print(row_str)
+    km_ints, km_bands = pkl.load(kmeans_pkl.open("rb"))["merged2"]
+    km_masks = MOD021KM.ints_to_masks(km_ints)
+    km_labels = [f"KM{i+1}" for i in range(np.amax(km_ints)+1)]
+
+    thresh_labels, thresh_masks = zip(*pkl.load(thresh_pkl.open("rb")).items())
+
+    mlc_run = "b9-km"
+    mlc_ints, mlc_km_labels = pkl.load(mlc_pkl.open("rb"))[mlc_run]
+    mlc_km_masks = MOD021KM.ints_to_masks(mlc_ints)
+    samples_km_masks, samples_km_labels = pkl.load(
+            samples_pkl.open("rb"))[mlc_run]
+
+    mlc_run = "b9-thresh"
+    mlc_ints, mlc_thresh_labels = pkl.load(mlc_pkl.open("rb"))[mlc_run]
+    mlc_thresh_masks = MOD021KM.ints_to_masks(mlc_ints)
+    samples_thresh_masks, samples_thresh_labels = pkl.load(
+            samples_pkl.open("rb"))[mlc_run]
+
+    pkl.dump({
+        "thresh":(thresh_labels, thresh_masks),
+        "km":(km_labels, km_masks), # merged
+        "samples_km":(samples_km_labels, samples_km_masks),
+        "samples_thresh":(samples_thresh_labels, samples_thresh_masks),
+        "mlc_km":(mlc_km_labels, mlc_km_masks),
+        "mlc_thresh":(mlc_thresh_labels, mlc_thresh_masks),
+        }, masks_pkl.open("wb"))
+    '''
+
+    """ Prepare for analysis of classifications and samples """
+    b9_bands=(1,2,3,4,5,19,20,26,28,29,31) # Batch 9; batch 2 w/20 not 21
+    b9_ref_bands = [b for b in b9_bands if subgrid.info(b)["is_reflective"]]
+    b9_temp_bands = [b for b in b9_bands if b not in b9_ref_bands]
+    b9_ref = np.dstack([subgrid.data(b) for b in b9_ref_bands])
+    b9_temp = np.dstack([subgrid.data(b) for b in b9_temp_bands])
+    masks_dict = pkl.load(masks_pkl.open("rb"))
+
+    '''
+    """ Generate spectral distribution graphics """
+    run_key = "mlc_thresh"
+    run_cats, run_masks = masks_dict[run_key]
+    subgrid.spectral_analysis(
+            b9_ref_bands, run_cats, run_masks,
+            plot_spec={
+                "title":"Batch 9 Threshold Reflectance Spectral Response",
+                "xlabel":"MODIS band wavelengths",
+                "ylabel":"Bidirectional Reflectance Factor",
+                },
+            fig_path=fig_dir.joinpath(f"spectra/ref_{run_key}_b9")
+            )
+    subgrid.spectral_analysis(
+            b9_temp_bands, run_cats, run_masks,
+            plot_spec={
+                "title":"Batch 9 Threshold Temperature Spectral Response",
+                "xlabel":"MODIS band wavelengths",
+                "ylabel":"Brightness Temperature (K)",
+                "yrange":(240,330),
+                },
+            fig_path=fig_dir.joinpath(f"spectra/temp_{run_key}_b9")
+            )
+    '''
+
+    """
+    Print information on area, covariance, standard deviation, and covariance
+    """
+    '''
+    """ Print pixel count and area info for each run """
+    print(TFmt.WHITE(
+        f"\n -----( AREAS )----- ", bold=True))
+    for run in masks_dict.keys():
+        run_labels, masks = masks_dict[run]
+        print("\\hline")
+        print("\\textnormal{"+run+"} & "+" & ".join(run_labels))
+        print("\\textnormal{Pixels} & "+" & ".join(
+            [str(int(np.count_nonzero(M))) for M in masks]))
+        print("\\textnormal{Areas} & "+" & ".join(
+            [str(int(subgrid.area(M))) for M in masks]))
+    print(TFmt.GREEN(f"Total area: {subgrid.area()}", bold=True))
+    '''
+
+    '''
+    """ Get mean, stdev, and covariance tables for each class in a run """
+    # runs: thresh, km, samples_thresh, mlc_thresh, samples_km, mlc_km
+    run = "mlc_km"
+    run_labels, run_masks = masks_dict[run]
+    """ Get a table for reflectance bands """
+    print("\n\\clearpage\n")
+    print("\\begin{figure}[h]\n\\centering")
+    print("\\begin{tabular}{C|C|C|" + "".join(
+        ["C" for i in range(len(b9_ref_bands))]) + "}\n")
+    ref_uncertain = None
+    col_str = "\lambda & \mu & \sigma & \multicolumn{"
+    col_str += str(len(b9_ref_bands))+"}{c}{" + \
+            "Reflectance Covariance $(\\times10^{4})$} \\\\\n"
+    print(col_str)
+    for i in range(len(run_labels)):
+        ref_px = b9_ref[np.where(run_masks[i])].T
+        ref_px = [ref_px[i,:] for i in range(ref_px.shape[0])]
+        # Sort the bands by their center wavelengths
+        b9_ref_wl = [subgrid.info(b)["ctr_wl"] for b in b9_ref_bands]
+        _, b9_ref_bands, ref_px = zip(*sorted(
+            zip(b9_ref_wl, b9_ref_bands, ref_px), key=lambda t: t[0]))
+        ref_px = np.squeeze(np.dstack(ref_px)).T
+        # Get the mean and stdev vectors and covariance matrix
+        ref_avg = np.average(ref_px, axis=1)
+        ref_cov = np.cov(ref_px)
+        ref_stdev = np.std(ref_px, axis=1)
+        header_str = "\\hline\n"
+        header_str += "\\multicolumn{"+str(len(b9_ref_bands)+3)+"}{c}{" + \
+                run_labels[i].replace("_"," ")+"} \\\\\n\\hline"
+        rows = ""
+        # Make a row for each band
+        for j in range(len(b9_ref_bands)):
+            row_str = f"{subgrid.info(b9_ref_bands[j])['ctr_wl']:.3f} & "
+            row_str += f"{ref_avg[j]:.3f} & {ref_stdev[j]:.3f} & "
+            row_str += " & ".join(map(
+                lambda s:f"{s:.1f}",list(10000*ref_cov[j,:]))) + " \\\\\n"
+            rows += row_str
+        if run_labels[i]=="uncertain":
+            ref_uncertain = (header_str, col_str, rows)
+        else:
+            print(header_str)
+            print(rows)
+    print("\\end{tabular}")
+    print("\\caption{"+run.replace("_", " ")+" reflectance statistics}")
+    print("\\label{"+run+"_ref_stats}\n\\end{figure}")
+
+    """ Get a table for thermal bands """
+    print("\n\\clearpage\n")
+    print("\\begin{figure}[h]\n\\centering")
+    print("\\begin{tabular}{C|C|C|" + "".join(
+        ["C" for i in range(len(b9_temp_bands))]) + "}\n")
+    temp_uncertain = None
+    col_str = "\lambda & \mu & \sigma & \multicolumn{"
+    col_str += str(len(b9_temp_bands))+"}{c}{" + \
+            "Brightness Temp. Covariance $(\\times10^{2})$} \\\\\n"
+    print(col_str)
+    for i in range(len(run_labels)):
+        temp_px = b9_temp[np.where(run_masks[i])].T
+        temp_px = [temp_px[i,:] for i in range(temp_px.shape[0])]
+        # Sort the bands by their center wavelengths
+        b9_temp_wl = [subgrid.info(b)["ctr_wl"] for b in b9_temp_bands]
+        _, b9_temp_bands, temp_px = zip(*sorted(
+            zip(b9_temp_wl, b9_temp_bands, temp_px), key=lambda t: t[0]))
+        temp_px = np.squeeze(np.dstack(temp_px)).T
+        # Get the mean and stdev vectors and covariance matrix
+        temp_avg = np.average(temp_px, axis=1)
+        temp_cov = np.cov(temp_px)
+        temp_stdev = np.std(temp_px, axis=1)
+        header_str = "\\hline\n"
+        header_str += "\\multicolumn{"+str(len(b9_temp_bands)+3)+"}{c}{" + \
+                run_labels[i].replace("_"," ")+"} \\\\\n\\hline"
+        rows = ""
+        # Make a row for each band
+        for j in range(len(b9_temp_bands)):
+            row_str = f"{subgrid.info(b9_temp_bands[j])['ctr_wl']:.2f} & "
+            row_str += f"{temp_avg[j]:.1f} & {temp_stdev[j]:.2f} & "
+            row_str += " & ".join(map(
+                lambda s:f"{s:.1f}",list(100*temp_cov[j,:]))) + " \\\\\n"
+            rows += row_str
+        if run_labels[i]=="uncertain":
+            temp_uncertain = (header_str, col_str, rows)
+        else:
+            print(header_str)
+            print(rows)
+    print("\\end{tabular}")
+    print("\\caption{"+run.replace("_", " ")+" brightness temp. statistics}")
+    print("\\label{"+run+"_temp_stats}\n\\end{figure}")
+
+    """ If there is an uncertain class, print a table for it """
+    if temp_uncertain:
+        print("\n\\clearpage\n")
+        print("\\begin{figure}[h]\n\\centering")
+        print("\\begin{tabular}{C|C|C|" + "".join(
+            ["C" for i in range(len(b9_ref_bands))]) + "}\n")
+        print(ref_uncertain[1]+"\\hline"+ref_uncertain[2])
+        print("\\end{tabular}")
+        print("\\begin{tabular}{C|C|C|" + "".join(
+            ["C" for i in range(len(b9_temp_bands))]) + "}\n")
+        print(temp_uncertain[1]+"\\hline"+temp_uncertain[2])
+        print("\\end{tabular}")
+        print("\\caption{"+run.replace("_", " ") + \
+                " Uncertain reflectance and brightness temp. statistics}")
+        print("\\label{"+run+"_unc_stats}\n\\end{figure}")
+    '''
+
+    """ Get confusion matrices """
+    run = "mlc_km"
+    run_labels, run_masks = masks_dict[run]
