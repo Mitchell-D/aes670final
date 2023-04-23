@@ -685,17 +685,32 @@ if __name__=="__main__":
     samples_thresh_masks, samples_thresh_labels = pkl.load(
             samples_pkl.open("rb"))[mlc_run]
 
-    pkl.dump({
-        "thresh":(thresh_labels, thresh_masks),
-        "km":(km_labels, km_masks), # merged
-        "samples_km":(samples_km_labels, samples_km_masks),
-        "samples_thresh":(samples_thresh_labels, samples_thresh_masks),
-        "mlc_km":(mlc_km_labels, mlc_km_masks),
-        "mlc_thresh":(mlc_thresh_labels, mlc_thresh_masks),
-        }, masks_pkl.open("wb"))
+    """
+    IMPORTANT! This is the final step of the classification procedure. The
+    masks pickle is a dictionary mapping each classification type's ID string
+    to a tuple of labels for that class, which are mapped to a 2-tuple
+    containing equal-sized lists of string labels for each class and (M,N)
+    boolean masks with the corresponding class set to True. These masks
+    correspond to one full run of the procedure. For my final project,
+    I used samples from the following bands for all classification:
+    b9_bands = (1,2,3,4,5,19,20,26,28,29,31)
+    """
+    if input(TFmt.RED(
+        "Are you SURE you want to overwrite the merged class pickle? ") + \
+                TFm.WHITE("(Y/n)",bold=True)).lower() == "y":
+        pkl.dump({
+            "thresh":(thresh_labels, thresh_masks),
+            "km":(km_labels, km_masks), # merged
+            "samples_km":(samples_km_labels, samples_km_masks),
+            "samples_thresh":(samples_thresh_labels, samples_thresh_masks),
+            "mlc_km":(mlc_km_labels, mlc_km_masks),
+            "mlc_thresh":(mlc_thresh_labels, mlc_thresh_masks),
+            }, masks_pkl.open("wb"))
     '''
 
-    """ Prepare for analysis of classifications and samples """
+    """ -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- """
+    """         Prepare for analysis of classifications and samples         """
+    """ -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- -=- """
     b9_bands=(1,2,3,4,5,19,20,26,28,29,31) # Batch 9; batch 2 w/20 not 21
     b9_ref_bands = [b for b in b9_bands if subgrid.info(b)["is_reflective"]]
     b9_temp_bands = [b for b in b9_bands if b not in b9_ref_bands]
@@ -703,14 +718,34 @@ if __name__=="__main__":
     b9_temp = np.dstack([subgrid.data(b) for b in b9_temp_bands])
     masks_dict = pkl.load(masks_pkl.open("rb"))
 
+
+    '''
+    """ Generate pixel masks for every class in every classification run """
+    base_rgb = "TC"
+    for rk in masks_dict.keys():
+        rl, rm = masks_dict[rk]
+        print(rk,rl)
+        for i in range(len(rl)):
+            pass
+            gp.generate_raw_image(MOD021KM.mask_to_color(subgrid.get_rgb(
+                base_rgb), rm[i], radius=1),fig_dir.joinpath(
+                    f"colormask/cmask_{rk}_{rl[i]}_{base_rgb}.png"))
+    '''
+
+
     #'''
-    """ Generate spectral distribution graphics """
-    run_key = "km"
+    """
+    Generate spectral distribution graphics for the selected classification run
+    """
+    run_key = "mlc_km"
+    type_str = "Maximum-likelihood classification results from K-means samples"
+
+    print(TFmt.GREEN(f"Selected run {run_key} from {list(masks_dict.keys())}"))
     run_cats, run_masks = masks_dict[run_key]
     subgrid.spectral_analysis(
             b9_ref_bands, run_cats, run_masks,
             plot_spec={
-                "title":"Batch 9 Threshold Reflectance Spectral Response",
+                "title":f"Batch 9 {type_str} Reflectance Spectral Response",
                 "xlabel":"MODIS band wavelengths",
                 "ylabel":"Bidirectional Reflectance Factor",
                 },
@@ -719,7 +754,7 @@ if __name__=="__main__":
     subgrid.spectral_analysis(
             b9_temp_bands, run_cats, run_masks,
             plot_spec={
-                "title":"Batch 9 Threshold Temperature Spectral Response",
+                "title":f"Batch 9 {type_str} Temperature Spectral Response",
                 "xlabel":"MODIS band wavelengths",
                 "ylabel":"Brightness Temperature (K)",
                 "yrange":(240,330),
@@ -732,7 +767,7 @@ if __name__=="__main__":
     subgrid.spectral_analysis(
             mask_labels=run_cats, masks=run_masks,
             plot_spec={
-                "title":"All-band Threshold Reflectance Spectral Response",
+                "title":f"All-band {type_str} Reflectance Spectral Response",
                 "xlabel":"MODIS band wavelengths",
                 "ylabel":"Bidirectional Reflectance Factor",
                 "yrange":(0,1),
@@ -742,7 +777,7 @@ if __name__=="__main__":
     subgrid.spectral_analysis(
             all_temp_bands, run_cats, run_masks,
             plot_spec={
-                "title":"All-band Threshold Temperature Spectral Response",
+                "title":f"All-band {type_str} Temperature Spectral Response",
                 "xlabel":"MODIS band wavelengths",
                 "ylabel":"Brightness Temperature (K)",
                 "yrange":(240,330),

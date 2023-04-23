@@ -15,6 +15,7 @@
 \usepackage{booktabs}
 \usepackage{soul}
 \usepackage{fancyhdr}
+\usepackage{setspace}
 
 \hypersetup{
     colorlinks=true,
@@ -55,9 +56,11 @@
 \titleformat{\subsection}
   {\normalfont\fontsize{12}{15}\bfseries}{\thesubsection}{1em}{}
 
-\title{AES 670 Final Project}
+\title{AES 670 Satellite Remote Sensing
+
+Final Project}
  \author{Mitchell Dodson}
-\date{March 26, 2023}
+\date{April 23, 2023}
 
 \begin{document}
 
@@ -88,7 +91,7 @@ In this project I perform K-means and maximum-likelihood pixel classification an
 
 One of my major goals for graduate school is to collect code I write for classes and research into a reusable package of software tools with a common architecture and a minimal number of dependencies, which I ultimately want to develop into an ongoing open-source software project. This class has enabled me to make significant headway on my goal, so this report will serve as both a surface analysis of my region and a demonstration of my software. Figure \ref{repo_diagram} shows the layout of my package, which is currently called \hltexttt{aes670hw2} (subject to renaming soon). The package and its dependencies can be installed manually with \hltexttt{pip install /path/to/aes670hw2}, or with \hltexttt{conda-forge} using the included \hltexttt{environment.yml} file. Any of the sub-modules can be imported directly from the package, for example \hltexttt{from aes670hw2 import enhance as enh}.
 
-Software development is a balancing act between usability and re-usability. ``Low-level'' operations like N-dimensional histogram matching must be complicated enough to be useful to specialized tasks without the need for extra infrastructure code, and ``high-level'' methods like getting user input at runtime with a live-rendered RGB must be general enough to be used for a variety of data circumstances. As such, I'm keeping a wide range potential future use cases in mind for each every module, and attempting to stratify the methods within each module into a reusable collection of sub-tasks. For instance, \hltexttt{enhance.histogram\_match} is a relatively high-level method that takes two equally-shaped 2d or 3d arrays and histogram-matches the first two axes of the first array to the first two axes of the second array in a provided number of bins. This method is only 19 lines long since it subsequently depends on \hltexttt{enhance.get\_cumulative\_hist}, \hltexttt{enhance.get\_pixel\_counts}, \hltexttt{enhance.norm\_to\_uint}, and other sub-tasks that are re-usable for a wide variety of other purposes.
+Software development is a balancing act between usability and re-usability. ``Low-level'' operations like N-dimensional histogram matching must be complicated enough to be useful to specialized tasks without the need for extra infrastructure code, and ``high-level'' methods like getting user input at runtime with a live-rendered RGB must be general enough to be used for a variety of data circumstances. As such, I'm keeping a wide range potential future use cases in mind for each every module, and attempting to separate the methods within each module into a reusable collection of sub-tasks. For instance, \hltexttt{enhance.histogram\_match} is a relatively high-level method that takes two equally-shaped 2d or 3d arrays and histogram-matches the first two axes of the first array to the first two axes of the second array in a provided number of bins. This method is only 19 lines long since it subsequently depends on \hltexttt{enhance.get\_cumulative\_hist}, \hltexttt{enhance.get\_pixel\_counts}, \hltexttt{enhance.norm\_to\_uint}, and other sub-tasks that are re-usable for a variety of other purposes.
 
 I have a long list of future plans for this project, which include developing API wrappers for data sources other than the LAADS DAAC and NOAA AWS buckets, adapting the \hltexttt{products.MOD021KM} class design to support any gridded dataset, and an asynchronous process queue to enable multiple simultaneous OpenCV2 windows. My codebase currently exceeds 7,500 lines of Python, which includes detailed internal documentation for every method. The following tables provide an overview of each module's purpose.
 
@@ -113,7 +116,7 @@ I have a long list of future plans for this project, which include developing AP
         \textbf{Module} & \textbf{Purpose} \\\hline
 
         \hltexttt{image} &
-        The \hltexttt{image} module contains sub-modules with methods for performing enhancement and other pixelwise operations on general 2d and 3d arrays (\hltexttt{enhance.py}), plotting continuous and discrete 1d, 2d, and 3d data in a variety of formats with a common configuration format (\hltexttt{geo\_plot.py}), manipulating and interpolating 2d and 3d arrays in multiple coordinate systems (\hltexttt{geo\_helpers.py}), performing histogram analysis, equalization, and matching on arbitrary 2d and 3d arrays (\hltexttt{enhance.py}), applying arbitrary convolutional kernels to arrays with several hardcoded options, running my fast-fourier implementation and applying user-defined frequency masks (\hltexttt{enhance.py}), and contains a variety of hardcoded RGB recipes (\hltexttt{recipe\_book.py}). This module has no dependencies that aren't installed by default in Python \hltexttt{wheel}.
+        The \hltexttt{image} module contains sub-modules with methods for performing enhancement and other pixelwise operations on general 2d and 3d arrays (\hltexttt{enhance.py}), plotting continuous and discrete 1d, 2d, and 3d data in a variety of formats with a common configuration style (\hltexttt{geo\_plot.py}), manipulating and interpolating 2d and 3d arrays in multiple coordinate systems (\hltexttt{geo\_helpers.py}), performing histogram analysis, equalization, and matching on arbitrary 2d and 3d arrays (\hltexttt{enhance.py}), applying arbitrary convolutional kernels to arrays with several hardcoded options, running my fast-fourier implementation and applying user-defined frequency masks (\hltexttt{enhance.py}), and contains a variety of hardcoded RGB recipes (\hltexttt{recipe\_book.py}). This module has no dependencies that aren't installed by default in Python \hltexttt{wheel}.
         \\\hline
 
         \hltexttt{laads} &
@@ -128,10 +131,16 @@ I have a long list of future plans for this project, which include developing AP
 
 \clearpage
 
+{\footnotesize
 \noindent
-\textbf{NOTE:} In order to prevent confusion between class and object methods, I will refer to static class methods with the notation \hltexttt{MOD021KM.static\_method}, and methods that must be called on an instance of the object with the notation \hltexttt{subgrid.object\_method}, where \hltexttt{subgrid} is presumed to be a \hltexttt{MOD021KM} object with all the needed bands loaded. Instances may be initialized like \hltexttt{subgrid = MOD021KM.from\_hdf(l1b\_hdf, l1b\_bands)} or \hltexttt{subgrid = MOD021KM.from\_pkl(pkl\_path).}
+\textbf{NOTE:} In order to prevent confusion between class and object methods, I will refer to static class methods with the notation \hltexttt{MOD021KM.static\_method}, and methods that must be called on an instance of the object with the notation \hltexttt{subgrid.object\_method}, where \hltexttt{subgrid} is presumed to be a \hltexttt{MOD021KM} object with all the needed bands loaded. Instances may be initialized with an HDF by calling the static method \hltexttt{subgrid = MOD021KM.from\_hdf(l1b\_hdf, l1b\_bands)}. Existing MOD021KM objects can be stored as a pickle binary file with \hltexttt{subgrid.make\_pkl(pkl\_path)}, and subsequently retrieved from the file with \hltexttt{subgrid = MOD021KM.from\_pkl(pkl\_path)}.
+}
+
+\vspace{-.5em}
 
 \section{Data and domain of analysis}\label{data_domain}
+
+\vspace{-.5em}
 
 \begin{figure}[h!]
     \centering
@@ -222,7 +231,7 @@ The daytime cloud-phase RGB assigns the $1.38\mu m$ cirrus band to RED, the $6.4
 
     \includegraphics[width=.3\paperwidth]{figs/hsv/cbar.png}
 
-    \caption{Left: gamma-enhanced NDVI heatmap (using $.86\mu m$ NIR and $.64\mu m$ RED bands). Right: gamma-enhanced band 28 ($7.3\mu m$) brightness temperature heatmap. Both conform to the color bar with low values in magenta and high values in red. These are generated with \hltexttt{guitools.scal\_to\_rgb}, for example: \hltexttt{guitools.scal\_to\_rgb(subgrid.data("ndvi",choose\_gamma=True))}. Hue, saturation, and value ranges for the RGB-mapped scalar array can be optionally provided.}
+    \caption{Left: gamma-enhanced heatmap of NDVI (using $.86\mu m$ NIR and $.64\mu m$ RED bands). Right: gamma-enhanced heatmap of MODIS band 28 ($7.3\mu m$) brightness temperatures. Both images are normalized to the scale of the color bar below low values in magenta and high values in red. These were generated by \hltexttt{geo\_plot.generate\_raw\_image} using RGBs from \hltexttt{guitools.scal\_to\_rgb}, for example: \hltexttt{guitools.scal\_to\_rgb(subgrid.data("ndvi",choose\_gamma=True))}. Hue, saturation, and value ranges for the RGB-mapped scalar array can be optionally provided.}
     \label{hsv_ndvi_28}
 \end{figure}
 
@@ -331,11 +340,11 @@ In order to further investigate the features identified in Section \ref{data_dom
 
 On one hand, in the atmosphere, the BLUE band ratio is large where $8.6\mu m$ band brightness temperatures are suppressed by water vapor as discussed in Section \ref{data_domain}. This is apparent at the edges of water clouds, in regions with sub-pixel clouds, and in regions with high PWV. Optically thick (and especially high-altitude) clouds have similar brightness temperatures in both bands, and as such have low ratio values. In clear-sky regions, on the other hand, the BLUE band ratio is dominantly sensitive to LSE. The inverse Planck function \hltexttt{modis.get\_modis\_data} uses to calculate brightness temperatures from infrared radiance implicitly assumes that the emissivity of incident surfaces is $\epsilon = 1$. Since the $8.4-8.7\mu m$ band occupies a spectral range right on the steep low-wavelength edge of the $T\approx 300K$ blackbody emission curve, it is more sensitive to error in this assumption. Thus low-emissivity surfaces like sand ($\epsilon \approx .89$) appear brighter in the ratio than high-emissivity surfaces like vegetation ($\epsilon \approx .94$).
 
-Both of the phenomena influencing the BLUE band ratio are ultimately the consequence of changes in emissivity among surfaces, as atmospheric layers with a low optical depth equivalently have low emissivity. Nonetheless, my RGB's property that low LSE and high PWV both correlate with high BLUE brightness values can make interpretation challenging. For example in Figure \ref{custom_rgb}, the sandy region Southwest of the Nile Delta appears artificially more blue than the similarly sandy region at the East edge of the delta due to the presence of PWV from the moist airmass seen in Figure \ref{hsv_ndvi_28}.
+Both of the phenomena influencing the BLUE band ratio are ultimately the consequence of changes in emissivity among surfaces, as atmospheric layers with a low optical depth equivalently have low emissivity. Nonetheless, my RGB's property that low LSE and high PWV both correlate with high BLUE brightness values can make interpretation challenging. For example in Figure \ref{custom_rgb}, the sandy region Southwest of the Nile Delta appears artificially more blue than the similarly sandy region at the East edge of the delta due to the increased presence of PWV from the moist airmass seen in Figure \ref{hsv_ndvi_28}.
 
-I created the custom RGB featured in Figure \ref{custom_rgb} by adding new scalar recipes for each channel, for example: \hltexttt{subgrid.add\_recipe("LWrat",(29,31),lambda a,b:norm(b/a))}, then an RGB recipe with arguments for each channels using \hltexttt{subgrid.add\_rgb\_recipe}. Next, I called \hltexttt{guitools.get\_normal\_rgb} to generate an RGB array with the same shape as my data, which contains normally-distributed scalar values in each 2d channel corresponding to the means and standard deviations specified in Table \ref{custom_recipe}, which are sampled in the $[0,1]$ range. Then I histogram-matched my custom RGB recipe to the normally-distributed RGB array with \hltexttt{subgrid.\_histogram\_match}, adding the data array to my \hltexttt{subgrid} object with \hltexttt{subgrid.add\_rgb\_data("CUSTOMhist", rgb)}. Finally, I shifted the brightness histograms to distributions convenient for land-surface analysis by calling \hltexttt{subgrid.get\_rgb("CUSTOMhist",choose\_gamma=True)}.
+I created the custom RGB featured in Figure \ref{custom_rgb} by adding new scalar recipes for each channel, for example: \hltexttt{subgrid.add\_recipe("LWrat",(29,31),lambda a,b:norm(b/a))}, then an RGB recipe with arguments for each channels using \hltexttt{subgrid.add\_rgb\_recipe}. Next, I called \hltexttt{guitools.get\_normal\_rgb} to generate an RGB array with the same shape as my data, which contains normally-distributed scalar values in each 2d channel corresponding to the means and standard deviations specified in Table \ref{custom_recipe}, which are sampled in the $[0,1]$ range. Then I histogram-matched my custom RGB recipe to the normally-distributed RGB array with \hltexttt{subgrid.histogram\_match}, adding the data array to my \hltexttt{subgrid} object with \hltexttt{subgrid.add\_rgb\_data("CUSTOMhist", rgb)}. Finally, I shifted the brightness histograms to distributions convenient for land-surface analysis by calling \hltexttt{subgrid.get\_rgb("CUSTOMhist",choose\_gamma=True)}.
 
-Figures \ref{custom_rgb} and \ref{custom_components} are the results of executing this procedure for a single RGB. The spectral distribution in Figure \ref{custom_components} was generated by calling \hltexttt{subgrid.rgb\_histogram\_analysis} with the RGB's data label ``CUSTOMhist''. Each channel heatmap in the figure was generated by getting an RGB for each color by calling \hltexttt{guitools.scal\_to\_rgb} with custom HSV range parameters, then generating the images with \hltexttt{gui\_plot.generate\_raw\_image}.
+Figures \ref{custom_rgb} and \ref{custom_components} are the results of executing this procedure for a single RGB. The spectral distribution in Figure \ref{custom_components} was generated by calling \hltexttt{subgrid.rgb\_histogram\_analysis} with the RGB's data label ``CUSTOMhist''. Each channel heatmap in the figure was created by generating an RGB with \hltexttt{guitools.scal\_to\_rgb} using custom HSV range parameters, then generating images with \hltexttt{gui\_plot.generate\_raw\_image}.
 
  Low-density vegetation appears brown due to mid-brightness contributions from each channel since partially-vegetated land surfaces are generally warmer, have a lower NDVI, and have a lower total emissivity than heavily vegetated ares. The same logic applies to high and low-vegetation regions since NDVI strongly correlates with surface emissivity as outlined in (Van De Griend, 2007)\cite{griend2007}. After consulting a geographic atlas \cite{compactworldatlas}, I realized that the red regions in Jordan and Syria correspond very closely to the Sinai mountain ridge and the Judaean mountains. The geology of this region suggests that these areas mostly consist of exposed and fragmented limestone, which has an emissivity around $\epsilon=.95$. The surrounding pink and purple regions are dominantly loamy soil and exposed sandstome, which have emissivities around $\epsilon=.92$ \cite{compactworldatlas}\cite{mineo2021}\cite{bentor1980}, hence the contribution from the BLUE channel.
 
@@ -367,7 +376,7 @@ The blue-tinted regions over the Mediterranean on the left of the Figure \ref{cu
     \label{thresh_masks}
 \end{figure}
 
-In order to isolate the 5 surface types I'm analyzing, I manually selected valid reflectance and brightness temperature ranges with \texttt{subgrid.get\_mask} for a series of bands and RGB recipes. This method launches a GUI interface with a trackbar input form and an image that is rendered with a callback loop depending on the value of the input. For each channel of each RGB in my procedure, I used the trackbar to select a lower and upper bound for the mask. After data ranges for a surface class were determined, I histogram-matched the in-range values to the RGB that best accentuates the surface type using \texttt{subgrid.histogram\_match}. Figure \ref{thresh_masks} shows the results, which rule out pixels that were out of bounds for any channel in any image used for thresholding the class.
+In order to isolate the 5 surface types I'm analyzing, I manually selected valid reflectance and brightness temperature ranges with \hltexttt{subgrid.get\_mask} for a series of bands and RGB recipes. This method launches a GUI interface with a trackbar input form and an image that is rendered with a callback loop depending on the value of the input. For each channel of each RGB in my procedure, I used the trackbar to select a lower and upper bound for the mask. After data ranges for a surface class were determined, I histogram-matched the in-range values to the RGB that best accentuates the surface type using \hltexttt{subgrid.histogram\_match}. Figure \ref{thresh_masks} shows the results, which rule out pixels that were out of bounds for any channel in any image used for thresholding the class.
 
 Histogram-matched surface class masks are useful for interpretation because the histogram matching process spreads out brightness values of RGB channels with high variance for data values in the class. For example, the vegetation mask was histogram-matched to my custom RGB. There are a wide range of plant densities visible in this mask due to the variability in the RED (LWIR) and GREEN (NDVI) channels of my custom RGB. The water mask, which was also matched to my RGB, features a bright region just Northeast of the Nile Delta, which corresponds to warmer regions in the RED (LWIR) channel from a relative lack of sub-pixel clouds and atmospheric moisture, as suggested by the $7.3\mu m$ channel rendering in Figure \ref{hsv_ndvi_28}, and the relatively high temperature and low emissivity in this region indicated by Figure \ref{custom_components}'s RED and BLUE channels.
 
@@ -396,7 +405,7 @@ Histogram-matched surface class masks are useful for interpretation because the 
     \label{thresh_areas}
 \end{table}
 
-Table \ref{thresh_areas} shows the number of pixels and approximate surface area of each of the classes derived from thresholding. Areas were calculated for each surface type by passing the 2d boolean array returned by \texttt{subgrid.get\_mask} to the \texttt{subgrid.area} method, which returns the sum of the surface areas of unmasked pixels by calculating the pixelwise panoramic distortion with the viewing zenith angle array (\texttt{subgrid.data("vza")}). This table makes clear that water and arid land dominate the region, followed by vegetated land surfaces.
+Table \ref{thresh_areas} shows the number of pixels and approximate surface area of each of the classes derived from thresholding. Areas were calculated for each surface type by passing the 2d boolean array returned by \hltexttt{subgrid.get\_mask} to the \hltexttt{subgrid.area} method, which returns the sum of the surface areas of unmasked pixels by calculating the pixelwise panoramic distortion with the viewing zenith angle array (\hltexttt{subgrid.data("vza")}). This table makes clear that water and arid land dominate the region, followed by vegetated land surfaces.
 
 Ice clouds and water clouds are under-represented because I intentionally chose restrictive thresholds for these classes. Clouds in general were difficult to threshold due to the scarcity of vapor bands uncorrupted by striping, the wide range of PWV values in my region, and the presence of mixed-phase clouds over the Mediterranean. For example, note the light blue mid-level water-phase clouds present on the right side of the ice cloud mask in Figure \ref{thresh_masks}. These inhabit a region with low precipitable water vapor and a very thin cirrus layer, and as such weren't masked with a lower bound on LWIR brightness temperature or the $1.37\mu m$ cirrus band. Since I will sub-sample my thresholded classes to use as training samples for maximum-likelihood classification, I wanted to leave as little ambiguity as possible in each class' spectral signature.
 
@@ -418,7 +427,7 @@ Ice clouds and water clouds are under-represented because I intentionally chose 
         }
     \end{center}
 
-    \caption{Reflective and thermal spectral response of each threshold-derived surface class. Each data point is the mean value of the class at that wavelength with $1-\sigma$ error bars and $\frac{1}{3}-\sigma$ shaded regions.}
+    \caption{Reflective and thermal spectral response of each threshold-derived surface class. Each data point is the mean value of the class at that wavelength with $1-\sigma$ error bars and $\frac{1}{3}-\sigma$ shaded regions. These plots were generated with the surface class masks from the thresholding procedure using \hltexttt{subgrid.spectral\_analysis}, which is a wrapper on the \hltexttt{geo\_plot.stats\_1d} function.}
     \label{thresh_spectra}
 \end{figure}
 
@@ -546,7 +555,7 @@ Ice clouds and water clouds are under-represented because I intentionally chose 
 \noindent
 \textbf{Thresholded surface class analysis}
 
-Figure \ref{thresh_spectra} shows the standard deviation and mean spectral response of each of my surface classes, using all the bands in Table \ref{band_table}. The reflectance of ice clouds in the top image has the largest standard deviation of all surface classes due to the aforementioned presence of water-phase clouds and the wide range in cirrus optical depth. Nonetheless, it's clear that the slope of mean ice cloud reflectance is less affected by absorption lines at $.856\mu m$, $.936\mu m$, and $1.382\mu m$ due to the relative scarcity of water vapor above the cirrus clouds' altitude. Table \ref{thresh_ref_stats} indicates that the reflectance curve of the vegetation class has a much lower standard deviation of around $.03$ in window bands. The hallmark jump in NIR reflectance over vegetation is readily apparent in its spectral response curve in Figure \ref{thresh_spectra}. The reflectance spectral response of water is most consistent, and charactaristically peaks in the blue range decreasing steeply to almost zero into the NIR range. As their bright white color suggests, clouds are by far the most reflective class in the visible range. The relatively high reflectivity of water clouds in the $1.629\mu m$ cloud phase band isn't well-represented by the thresholded samples because most of the cirrus clouds in my image are extremely thin, as mentioned in Section \ref{data_domain}. I chose not to use the $1.629\mu m$ band in classification because of these challenges, which means I will rely on infrared and $1.37\mu m$ NIR absorption bands alone for cirrus identification.
+Figure \ref{thresh_spectra} shows the standard deviation and mean spectral response of each of my surface classes, using all the bands in Table \ref{band_table}. The reflectance of ice clouds in the top image has the largest standard deviation of all surface classes due to the aforementioned presence of water-phase clouds and the wide range in cirrus optical depth. Nonetheless, it's clear that the slope of mean ice cloud reflectance is less affected by absorption lines at $.856\mu m$, $.936\mu m$, and $1.382\mu m$ due to the relative scarcity of water vapor above the cirrus clouds' altitude. Table \ref{thresh_ref_stats} indicates that the reflectance curve of the vegetation class has a much lower standard deviation of around $.03$ in window bands. The hallmark jump in NIR reflectance over vegetation is readily apparent in its spectral response curve in Figure \ref{thresh_spectra}. The reflectance spectral response of water is most consistent, and charactaristically peaks in the blue range, decreasing steeply to almost zero into the NIR range. As their bright white color suggests, clouds are by far the most reflective class in the visible range. The relatively high reflectivity of water clouds in the $1.629\mu m$ cloud phase band isn't well-represented by the thresholded samples because most of the cirrus clouds in my image are extremely thin, as mentioned in Section \ref{data_domain}. I chose not to use the $1.629\mu m$ band in classification because of these challenges, which means I will rely on infrared and $1.37\mu m$ NIR absorption bands alone for cirrus identification.
 
 \clearpage
 
@@ -591,7 +600,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
         }
     \end{center}
 
-    \caption{}
+    \caption{Mean spectral response of K-means classes for each of the bands used as classification inputs, with $1-\sigma$ error bars and $\frac{1}{3}-\sigma$ shaded regions. Top: reflectance bands, bottom: emissive bands.}
     \label{km_results}
 \end{figure}
 
@@ -605,7 +614,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 \lambda & \mu & \sigma & \multicolumn{7}{c}{Reflectance Covariance $(\times10^{4})$} \\
 
 \hline
-\multicolumn{10}{c}{KM1} \\
+    \multicolumn{10}{c}{KM1 (Vegetation)} \\
 \hline
 0.466 & 0.168 & 0.035 & 12.3 & 13.4 & 15.3 & 11.1 & 5.7 & 14.8 & 0.5 \\
 0.554 & 0.170 & 0.041 & 13.4 & 16.8 & 22.0 & 15.7 & 9.4 & 22.0 & 0.7 \\
@@ -616,7 +625,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.005 & 0.005 & 0.5 & 0.7 & 1.2 & 0.7 & 1.0 & 1.3 & 0.3 \\
 
 \hline
-\multicolumn{10}{c}{KM2} \\
+    \multicolumn{10}{c}{KM2 (Water)} \\
 \hline
 0.466 & 0.043 & 0.014 & 1.9 & 2.1 & 1.8 & 1.9 & 2.3 & 1.0 & 0.0 \\
 0.554 & 0.027 & 0.016 & 2.1 & 2.5 & 1.8 & 2.0 & 2.7 & 1.2 & 0.0 \\
@@ -627,7 +636,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.002 & 0.002 & 0.0 & 0.0 & -0.1 & 0.0 & 0.0 & 0.0 & 0.1 \\
 
 \hline
-\multicolumn{10}{c}{KM3} \\
+    \multicolumn{10}{c}{KM3 (Water Cloud)} \\
 \hline
 0.466 & 0.210 & 0.161 & 257.8 & 308.1 & 210.7 & 238.6 & 301.9 & 185.3 & 5.3 \\
 0.554 & 0.229 & 0.194 & 308.1 & 375.5 & 249.0 & 284.6 & 370.1 & 226.1 & 6.7 \\
@@ -638,7 +647,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.004 & 0.006 & 5.3 & 6.7 & 4.0 & 4.8 & 6.7 & 4.5 & 0.3 \\
 
 \hline
-\multicolumn{10}{c}{KM4} \\
+    \multicolumn{10}{c}{KM4 (Ice Cloud)} \\
 \hline
 0.466 & 0.120 & 0.103 & 106.5 & 138.2 & 82.6 & 96.6 & 143.1 & 78.3 & -0.1 \\
 0.554 & 0.130 & 0.139 & 138.2 & 192.6 & 101.1 & 123.8 & 201.5 & 109.2 & 0.7 \\
@@ -649,7 +658,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.016 & 0.010 & -0.1 & 0.7 & -0.8 & -0.3 & 0.8 & 1.2 & 0.9 \\
 
 \hline
-\multicolumn{10}{c}{KM5} \\
+    \multicolumn{10}{c}{KM5 (Arid)} \\
 \hline
 0.466 & 0.366 & 0.055 & 29.8 & 33.7 & 13.9 & 22.0 & 34.6 & 10.5 & -0.3 \\
 0.554 & 0.476 & 0.064 & 33.7 & 40.6 & 15.9 & 24.9 & 42.0 & 11.5 & -0.5 \\
@@ -660,7 +669,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.005 & 0.003 & -0.3 & -0.5 & -0.3 & -0.3 & -0.5 & 0.4 & 0.1 \\
 
 \end{tabular}
-\caption{km reflectance statistics}
+\caption{Mean class values and standard devia for each reflectance band and covariance matrices for each surface type identified by K-means classification.}
 \label{km_ref_stats}
 \end{table}
 
@@ -713,7 +722,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 11.00 & 307.0 & 3.03 & 741.5 & 470.0 & 460.9 & 918.3 \\
 
 \end{tabular}
-\caption{km brightness temp. statistics}
+\caption{Mean class values and standard devia for each emissive band and covariance matrices for each surface type identified by K-means classification.}
 \label{km_temp_stats}
 \end{table}
 
@@ -732,14 +741,36 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 \hline
 \textnormal{Prod. Acc.} & 0.865 & 0.994 & 0.982 & 0.996 & 0.882\\
 \end{tabular}
-\caption{km/thresh confusion matrix}
+\caption{Confusion matrix comparing my threshold-derived surface classes to the K-means results.}
 \label{confusion_km-thresh}
 \end{table}
 
-
 \clearpage
-\section{Tables}
 
+\section{Samples from thresholded classes}
+
+
+\begin{figure}[h!]
+    \centering
+
+    \begin{center}
+        \makebox[\textwidth]{
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_thresh_ice_cloud_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_thresh_water_cloud_TC.png}
+        }
+
+        \vspace{.2em}
+
+        \makebox[\textwidth]{
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_thresh_vegetation_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_thresh_water_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_thresh_arid_TC.png}
+        }
+    \end{center}
+
+    \caption{Pixels chosen from subsets of each threshold class mask. Top: ice cloud and water cloud samples. Bottom: vegetation, water, and arid land samples.}
+    \label{thresh_samples}
+\end{figure}
 
 \begin{figure}[h!]
     \centering
@@ -749,46 +780,31 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
     Pixel Count & 393 & 369 & 397 & 399 & 399\\
     Area (km$^2$) & 560 & 519 & 532 & 742 & 518\\
     \end{tabular}
-    \caption{Area and quantity of samples chosen from thresholded pixel classes.}
+    \caption{Area and quantity of samples chosen from thresholded pixel classes. 400 random pixels were selected for each class, and repeated indeces were dropped. Although the same number of samples were selected for water and arid surfaces, the surface area of the water samples is much higher due to additional panoramic distortion on the left side of the image.}
     \label{sample_thresh_areas}
 \end{figure}
 
-\begin{figure}[h!]
-    \centering
-    \begin{tabular}{c|ccccccc}
-    & Ice Cloud & Water Cloud & Vegetation & Water & Arid & Uncertain\\
-    \hline
-    Pixel Count & 69620 & 5799 & 43344 & 125432 & 68670 & 14815\\
-    Area (km$^2$) & 124604 & 8654 & 55828 & 226847 & 85326 & 27429\\
-    \end{tabular}
-    \caption{Area and quantity of pixel classes from maximum-likelihood classification using samples chosen from thresholded classes.}
-    \label{mlc_thresh_areas}
-\end{figure}
+
+\clearpage
 
 \begin{figure}[h!]
     \centering
-    \begin{tabular}{c|cccccc}
-    & KM1 & KM2 & KM3 & KM4 & KM5 \\
-    \hline
-    Pixel Count & 398 & 400 & 396 & 397 & 397\\
-    Area (km$^2$) & 485 & 747 & 846 & 609 & 497\\
-    \end{tabular}
-    \caption{Area and quantity of samples chosen from K-means pixel classes.}
-    \label{sample_km_areas}
+
+    \begin{center}
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/ref_samples_thresh_b9_cropped.png}
+        }
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/temp_samples_thresh_b9_cropped.png}
+        }
+    \end{center}
+
+    \caption{}
+    \label{samples_thresh_spectra}
 \end{figure}
 
-\begin{figure}[h!]
-    \centering
-    \begin{tabular}{c|ccccccc}
-    & KM1 & KM2 & KM3 & KM4 & KM5 & Uncertain\\
-    \hline
-    Pixel Count & 58435 & 155717 & 24430 & 22898 & 61084 & 5116\\
-    Area (km$^2$) & 71943 & 287288 & 49023 & 35537 & 77089 & 7806\\
-    \end{tabular}
-    \caption{Area and quantity of pixel classes from maximum-likelihood classification using K-means samples chosen from K-means classes.}
-    \label{mlc_km_areas}
-\end{figure}
 
+\clearpage
 
 \clearpage
 
@@ -854,7 +870,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.005 & 0.003 & -0.4 & -0.6 & -0.3 & -0.3 & -0.6 & 0.4 & 0.1 \\
 
 \end{tabular}
-\caption{samples thresh reflectance statistics}
+\caption{Mean values and standard devia of reflectance pixels sampled from thresholded classes. Includes mean reflectance and standard deviation for each band and covariance matrices for the 5 surface types I identified.}
 \label{samples_thresh_ref_stats}
 \end{figure}
 
@@ -907,10 +923,51 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 11.00 & 306.6 & 2.93 & 836.4 & 493.1 & 424.3 & 859.3 \\
 
 \end{tabular}
-\caption{samples thresh brightness temp. statistics}
+\caption{Mean values and standard devia of brightness temperature pixels sampled from thresholded classes. Includes mean brightness temperature in Kelvin and standard deviation for each band and covariance matrices for the 5 surface types I identified.}
 \label{samples_thresh_temp_stats}
 \end{figure}
 
+\clearpage
+\section{Maximum-likelihood classification with threshold samples}
+
+\begin{figure}[h!]
+    \centering
+
+    \includegraphics[width=.85\textwidth]{figs/class/mlc_b9-thresh_6c.png}
+
+    \caption{Results from maximum-likelihood classification using threshold samples.  Pixels with a confidence less than $5\%$ are added to the ``uncertain'' class. }
+    \label{mlc_thresh_results}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{c|ccccccc}
+    & Ice Cloud & Water Cloud & Vegetation & Water & Arid & Uncertain\\
+    \hline
+    Pixel Count & 69620 & 5799 & 43344 & 125432 & 68670 & 14815\\
+    Area (km$^2$) & 124604 & 8654 & 55828 & 226847 & 85326 & 27429\\
+    \end{tabular}
+    \caption{Area and quantity of pixel classes identified with maximum-likelihood classification using samples chosen from thresholded classes.}
+    \label{mlc_thresh_areas}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h!]
+    \centering
+
+    \begin{center}
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/ref_mlc_thresh_b9_cropped.png}
+        }
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/temp_mlc_thresh_b9_cropped.png}
+        }
+    \end{center}
+
+    \caption{}
+    \label{mlc_thresh_spectra}
+\end{figure}
 
 
 \clearpage
@@ -977,7 +1034,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 1.382 & 0.005 & 0.003 & -0.4 & -0.5 & -0.3 & -0.4 & -0.5 & 0.3 & 0.1 \\
 
 \end{tabular}
-\caption{mlc thresh reflectance statistics}
+\caption{Mean reflectance values and standard devia of each reflectance band, for each class identified by maximum-likelihood classification using pixel samples selected from band thresholds.}
 \label{mlc_thresh_ref_stats}
 \end{figure}
 
@@ -1030,10 +1087,9 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 11.00 & 306.8 & 2.94 & 827.1 & 478.9 & 377.2 & 863.8 \\
 
 \end{tabular}
-\caption{mlc thresh brightness temp. statistics}
+\caption{Mean brightness temperature values and standard devia of each emissive band, for each class identified by maximum-likelihood classification using pixel samples selected from band thresholds.}
 \label{mlc_thresh_temp_stats}
 \end{figure}
-
 
 \begin{figure}[h!]
 \centering
@@ -1053,7 +1109,7 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 \end{tabular}
         }
     \end{center}
-\caption{samples thresh/mlc thresh confusion matrix}
+    \caption{Confusion matrix comparing samples from manual thresholding to subsequent maximum-likelihood results.}
 \label{confusion_samples_thresh-mlc_thresh}
 \end{figure}
 
@@ -1086,6 +1142,64 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 \caption{mlc thresh Uncertain reflectance and brightness temp. statistics}
 \label{mlc_thresh_unc_stats}
 \end{figure}
+
+
+\clearpage
+
+\section{Samples from K-means classes}
+
+\begin{figure}[h!]
+    \centering
+
+    \begin{center}
+        \makebox[\textwidth]{
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_km_KM4_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_km_KM3_TC.png}
+        }
+
+        \vspace{.2em}
+
+        \makebox[\textwidth]{
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_km_KM1_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_km_KM2_TC.png}
+            \includegraphics[width=.3\paperwidth]{figs/masks/cmask_samples_km_KM5_TC.png}
+        }
+    \end{center}
+
+    \caption{Pixels chosen from K-means masks for each class as samples for supervised maximum-likelihood classification. Top: KM4 (ice cloud), KM3 (water cloud). Bottom: KM1 (vegetation), KM2 (water), KM5 (arid)}
+    \label{thresh_samples}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{c|cccccc}
+    & KM1 & KM2 & KM3 & KM4 & KM5 \\
+    \hline
+    Pixel Count & 398 & 400 & 396 & 397 & 397\\
+    Area (km$^2$) & 485 & 747 & 846 & 609 & 497\\
+    \end{tabular}
+    \caption{Area and quantity of samples chosen from K-means pixel classes.}
+    \label{sample_km_areas}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[h!]
+    \centering
+
+    \begin{center}
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/ref_samples_km_b9_cropped.png}
+        }
+        \makebox[\textwidth]{
+            \includegraphics[width=.85\paperwidth]{figs/spectra/temp_samples_km_b9_cropped.png}
+        }
+    \end{center}
+
+    \caption{}
+    \label{mlc_thresh_spectra}
+\end{figure}
+
 
 
 \clearpage
@@ -1207,6 +1321,33 @@ Figure \ref{thresh_spectra} shows the standard deviation and mean spectral respo
 \end{tabular}
 \caption{samples km brightness temp. statistics}
 \label{samples_km_temp_stats}
+\end{figure}
+
+
+\clearpage
+
+\section{Maximum-likelihood classification with K-means samples}
+
+\begin{figure}[h!]
+    \centering
+
+    \includegraphics[width=.85\textwidth]{figs/class/mlc_b9-km_6c.png}
+
+    \caption{}
+    \label{mlc_km_results}
+\end{figure}
+
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{c|ccccccc}
+    & KM1 & KM2 & KM3 & KM4 & KM5 & Uncertain\\
+    \hline
+    Pixel Count & 58435 & 155717 & 24430 & 22898 & 61084 & 5116\\
+    Area (km$^2$) & 71943 & 287288 & 49023 & 35537 & 77089 & 7806\\
+    \end{tabular}
+    \caption{Area and quantity of pixel classes from maximum-likelihood classification using K-means samples chosen from K-means classes.}
+    \label{mlc_km_areas}
 \end{figure}
 
 
