@@ -129,20 +129,20 @@ def do_kmeans(subgrid, km_bands:list, km_pkl:Path, fig_dir:Path,
                 show=False,
                 )
 
-def get_raw_images(subgrid, fig_dir):
+def get_raw_images(subgrid, fig_dir, hsv_params:dict={}):
     """ Get a grayscale and HSV scalar raster for each band """
     print(TFmt.YELLOW("Generating grayscale rasters for all bands"))
     for b in l1b_bands:
         gp.generate_raw_image(enh.norm_to_uint(subgrid.data(b),256,np.uint8),
                               fig_dir.joinpath(Path(f"scalar/gs_{b:02}.png")))
         gp.generate_raw_image(
-                enh.norm_to_uint(1-gt.scal_to_rgb(subgrid.data(b)),
+                enh.norm_to_uint(gt.scal_to_rgb(subgrid.data(b),**hsv_params),
                                  256, np.uint8),
                 fig_dir.joinpath(Path(f"scalar/hsv_{b:02}.png")))
         if subgrid.info(b)["is_reflective"]:
             gp.generate_raw_image(
-                    enh.norm_to_uint(1-gt.scal_to_rgb(
-                        subgrid.raw_reflectance(b)),256,np.uint8),
+                    enh.norm_to_uint(gt.scal_to_rgb(
+                        subgrid.raw_reflectance(b),**hsv_params),256,np.uint8),
                     fig_dir.joinpath(Path(f"scalar/rawref_{b:02}.png")))
 
 def get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl):
@@ -362,6 +362,8 @@ def get_sg1_surface_masks(subgrid, fig_dir, thresh_pkl):
 def do_threshold_spectral(subgrid, thresh_pkl):
     """
     Generate spectral distributions for pixels that belong to each mask.
+
+    This method does not update the threshold pkl
     """
     mask_labels, masks = tuple(zip(*pkl.load(thresh_pkl.open("rb")).items()))
     subgrid.spectral_analysis(
@@ -436,38 +438,100 @@ if __name__=="__main__":
         "ice_cloud":[.5,1,1],
         "arid":[.82,.76,.56],
         "uncertain":[0,0,0]}
+    hsv_params = {"hue_range":(.6,0),"sat_range":(.6,.9),"val_range":(.6,.6)}
 
     subgrid = restore_subgrid(subgrid_pkl)
-    #get_raw_images(subgrid, fig_dir)
     #get_rgbs(subgrid, fig_dir, choose=True, gamma_scale=4)
-    #get_surface_masks(subgrid, fig_dir, thresh_pkl)
     #get_sg2_surface_masks(subgrid, fig_dir, thresh_pkl)
     #do_threshold_spectral(subgrid, thresh_pkl)
+    #get_raw_images(subgrid, fig_dir, hsv_params)
 
-    #'''
-    """ Do spectral analysis on my custom RGB """
+    '''
+    """ Get gamma-enhanced and HSV-mapped RGB renders of band 28 and NDVI """
+    cbar_array = np.stack((np.linspace(0,1,512) for i in range(64)), axis=1).T
+    gp.generate_raw_image(gt.scal_to_rgb(cbar_array,**hsv_params),
+                          fig_dir.joinpath("scalar/cbar.png"))
+    gp.generate_raw_image(
+            gt.scal_to_rgb(subgrid.data(28, choose_gamma=True),**hsv_params),
+            fig_dir.joinpath("rgbs/gamma_hsv_28.png"))
+    gp.generate_raw_image(
+            gt.scal_to_rgb(subgrid.data(
+                "ndvi",choose_gamma=True),**hsv_params),
+            fig_dir.joinpath("rgbs/gamma_ndvi.png"))
+    '''
+
+    '''
+    """ Add a recipe for my histogram-equalized custom RGB (except NDVI) """
     subgrid.add_recipe(
             "Band 31, Norm",
-            Recipe((31,),lambda a: enh.histogram_equalize(a,1024)[0]))
+            Recipe((31,),lambda a: enh.linear_gamma_stretch(
+                enh.histogram_equalize(a,1024)[0])))
     subgrid.add_recipe(
             "NDVI Norm",
-            Recipe(("ndvi",),lambda a: 1024*enh.linear_gamma_stretch(a)))
+            Recipe(("ndvi",),lambda a: enh.linear_gamma_stretch(
+                np.clip(a,0,1))))
     subgrid.add_recipe(
             "Inv. Band 29, Norm",
-            Recipe((29,),lambda a: 1024-enh.histogram_equalize(a,1024)[0]))
+            Recipe((29,31),
+                   lambda a,b: enh.linear_gamma_stretch(b/a)))
     subgrid.add_rgb_recipe(
             "CUSTOMeq",
             Recipe(
                 args=["Band 31, Norm","NDVI Norm","Inv. Band 29, Norm"],
                 func=lambda a,b,c:enh.linear_gamma_stretch(np.dstack([a,b,c])))
             )
-    subgrid.histogram_analysis(
-            labels=["Band 31, Norm","NDVI Norm","Inv. Band 29, Norm"],
+    '''
+
+    '''
+    """
+    Generate my custom RGB and HSV-mapped scalar incredients, as well as a
+    brightness level histogram for the ingredients.
+    """
+    # Get an equalized custom RGB
+    custom_rgb = subgrid.get_rgb(
+            "CUSTOMeq",choose_gamma=False,choose_contrast=False,gamma_scale=3)
+    # Histogram-match the custom RGB to normal distributions
+    custom_rgb = subgrid.histogram_match(
+            custom_rgb,
+            gt.get_normal_rgb(
+                *subgrid.shape, means=(.5,.3,.5), stdevs=(.2,.2,.3)),
             nbins=1024,
-            plot_spec={"colors":[[1,0,0],[0,1,0],[0,0,1]]},
             show=True)
-    subgrid.quick_render("CUSTOMeq")
-    #'''
+    # Add the custom RGB as new RGB data
+    subgrid.add_rgb_data("CUSTOMhist", enh.linear_gamma_stretch(custom_rgb))
+    # Do histogram analysis on the gamma and histogram enhanced RGB
+    subgrid.rgb_histogram_analysis(
+            rgb_label="CUSTOMhistgamma",nbins=1024,show=True,
+            plot_spec={"colors":[[1,0,0],[0,1,0],[0,0,1]], "line_width":.8,
+                       "yrange":(0,.02), "xrange":(0,1)},
+            fig_path=fig_dir.joinpath("spectra/custom_matched.png"))
+    # Gamma-enhance the histogram-matched RGB
+
+    """ Gamma-enhance the histogram-matched RGB """
+    custom_rgb = subgrid.get_rgb("CUSTOMhist", choose_gamma=True,gamma_scale=2)
+    # Add the gamma-enhanced RGB as new data.
+    subgrid.add_rgb_data("CUSTOMhistgamma", custom_rgb)
+    # Do histogram analysis on the gamma and histogram enhanced RGB
+    subgrid.rgb_histogram_analysis(
+            rgb_label="CUSTOMhistgamma",nbins=1024,show=True,
+            plot_spec={"colors":[[1,0,0],[0,1,0],[0,0,1]], "line_width":.8,
+                       "yrange":(0,.02), "xrange":(0,1)},
+            fig_path=fig_dir.joinpath("spectra/custom_matched.png"))
+    gp.generate_raw_image(subgrid.get_rgb("CUSTOMhist"),
+                          fig_dir.joinpath("rgbs/rgb_CUSTOMhist.png"))
+    gp.generate_raw_image(subgrid.get_rgb("CUSTOMhistgamma"),
+                          fig_dir.joinpath("rgbs/rgb_CUSTOMhistgamma.png"))
+
+    gp.generate_raw_image(
+            gt.scal_to_rgb(custom_rgb[:,:,0], **hsv_params),
+            fig_dir.joinpath("rgbs/rgb_CUSTOMhistgamma_RED.png"))
+    gp.generate_raw_image(
+            gt.scal_to_rgb(custom_rgb[:,:,1], **hsv_params),
+            fig_dir.joinpath("rgbs/rgb_CUSTOMhistgamma_GREEN.png"))
+    gp.generate_raw_image(
+            gt.scal_to_rgb(custom_rgb[:,:,2], **hsv_params),
+            fig_dir.joinpath("rgbs/rgb_CUSTOMhistgamma_BLUE.png"))
+    '''
 
     '''
     """ Do K-means classification """
@@ -639,9 +703,9 @@ if __name__=="__main__":
     b9_temp = np.dstack([subgrid.data(b) for b in b9_temp_bands])
     masks_dict = pkl.load(masks_pkl.open("rb"))
 
-    '''
+    #'''
     """ Generate spectral distribution graphics """
-    run_key = "mlc_thresh"
+    run_key = "km"
     run_cats, run_masks = masks_dict[run_key]
     subgrid.spectral_analysis(
             b9_ref_bands, run_cats, run_masks,
@@ -650,7 +714,7 @@ if __name__=="__main__":
                 "xlabel":"MODIS band wavelengths",
                 "ylabel":"Bidirectional Reflectance Factor",
                 },
-            fig_path=fig_dir.joinpath(f"spectra/ref_{run_key}_b9")
+            fig_path=fig_dir.joinpath(f"spectra/ref_{run_key}_b9.png")
             )
     subgrid.spectral_analysis(
             b9_temp_bands, run_cats, run_masks,
@@ -662,16 +726,45 @@ if __name__=="__main__":
                 },
             fig_path=fig_dir.joinpath(f"spectra/temp_{run_key}_b9")
             )
-    '''
+    all_ref_bands = [b for b in subgrid.bands
+                     if subgrid.info(b)["is_reflective"]]
+    all_temp_bands = [b for b in subgrid.bands if b not in all_ref_bands]
+    subgrid.spectral_analysis(
+            mask_labels=run_cats, masks=run_masks,
+            plot_spec={
+                "title":"All-band Threshold Reflectance Spectral Response",
+                "xlabel":"MODIS band wavelengths",
+                "ylabel":"Bidirectional Reflectance Factor",
+                "yrange":(0,1),
+                },
+            fig_path=fig_dir.joinpath(f"spectra/ref_{run_key}_all.png")
+            )
+    subgrid.spectral_analysis(
+            all_temp_bands, run_cats, run_masks,
+            plot_spec={
+                "title":"All-band Threshold Temperature Spectral Response",
+                "xlabel":"MODIS band wavelengths",
+                "ylabel":"Brightness Temperature (K)",
+                "yrange":(240,330),
+                },
+            fig_path=fig_dir.joinpath(f"spectra/temp_{run_key}_all")
+            )
+    #'''
 
+    '''
     """
     Print information on area, covariance, standard deviation, and covariance
     """
-    '''
     """ Print pixel count and area info for each run """
     #gt.quick_render(gt.scal_to_rgb(subgrid.data("sza")))
     #print(TFmt.WHITE(
     #    f"\n -----( AREAS )----- ", bold=True))
+
+    print(np.amin(subgrid.data("vza")), np.amax(subgrid.data("vza")))
+    print(subgrid.data("vza").shape)
+    print(TFmt.GREEN(f"Total area: {subgrid.area()}", bold=True))
+    gp.generate_raw_image(enh.linear_gamma_stretch(subgrid.data("vza")),
+                          fig_dir.joinpath("scalar/vza.png"))
     km_runs = []
     normal_runs = []
     for run in masks_dict.keys():
@@ -704,7 +797,6 @@ if __name__=="__main__":
     print("\\caption{Pixel class areas and counts}")
     print("\\label{pixel_areas}\n\\end{figure}")
 
-    #print(TFmt.GREEN(f"Total area: {subgrid.area()}", bold=True))
     '''
 
     '''
