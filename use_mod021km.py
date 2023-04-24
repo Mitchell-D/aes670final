@@ -1,4 +1,6 @@
-""" """
+"""
+Primary driver script for the aes670 final project.
+"""
 
 from pathlib import Path
 from datetime import datetime as dt
@@ -977,3 +979,4 @@ if __name__=="__main__":
             compare[1].replace("_"," ")+" confusion matrix}")
     print("\\label{confusion_"+"-".join(compare)+"}\n\\end{figure}")
     '''
+# Shame I barely missed 1,000 lines.
